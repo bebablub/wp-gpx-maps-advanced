@@ -219,7 +219,6 @@ Yes!
 - OSM6: MapTiler Outdoor (hillshading, contour lines, hiking trails).
 - OSM7: MapTiler Topo (classic topographic map with contours).
 - OSM8: MapTiler Landscape (nature-focused with hillshading).
-- DNS prefetch/preconnect updated for api.maptiler.com.
 
 ### 2.0.1 (new)
 
