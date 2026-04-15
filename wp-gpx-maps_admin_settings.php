@@ -22,6 +22,7 @@
 	
 	$showCad = get_option('wpgpxmaps_show_cadence');
 	$showGrade = get_option('wpgpxmaps_show_grade');
+	$showExtremeMarkers = get_option('wpgpxmaps_show_extreme_markers');
 	$zoomonscrollwheel = get_option("wpgpxmaps_zoomonscrollwheel");	
 	$download = get_option("wpgpxmaps_download");
 	$skipcache = get_option("wpgpxmaps_skipcache");
@@ -45,6 +46,8 @@
 	
 	if (!($t))
 		$t = 'HYBRID';
+	if ($showExtremeMarkers === '' || $showExtremeMarkers === false)
+		$showExtremeMarkers = 'true';
 	if (!($po))
 		$po = 10;
 		
@@ -308,6 +311,12 @@
 			</td>
 		</tr>
 		<tr>
+			<th scope="row">Max altitude/speed markers:</th>
+			<td>
+				<input name="wpgpxmaps_show_extreme_markers" type="checkbox" value="true" <?php if($showExtremeMarkers != 'false'){echo('checked');} ?> onchange="this.value = (this.checked)"  /> <i>Show meaningful markers with hover tooltip (enabled by default)</i>
+			</td>
+		</tr>
+		<tr>
 			<th scope="row">Elevation highlight (grade-based):</th>
 			<td>
 				<input name="wpgpxmaps_elev_color_enabled" type="checkbox" value="true" <?php if(get_option('wpgpxmaps_elev_color_enabled') == true){echo('checked');} ?> onchange="this.value = (this.checked)"  /> <i>Color track red where grade exceeds threshold; fades with intensity.</i>
@@ -324,7 +333,7 @@
 
 	<p class="submit">
 		<input type="hidden" name="action" value="update" />
-    	<input name="page_options" type="hidden" value="wpgpxmaps_show_waypoint,wpgpxmaps_map_line_color,wpgpxmaps_map_type,wpgpxmaps_map_start_icon,wpgpxmaps_map_end_icon,wpgpxmaps_map_current_icon,wpgpxmaps_zoomonscrollwheel,wpgpxmaps_map_waypoint_icon,wpgpxmaps_currentpositioncon,wpgpxmaps_elev_color_enabled,wpgpxmaps_elev_color_threshold,wpgpxmaps_elev_color_max" />
+	    <input name="page_options" type="hidden" value="wpgpxmaps_show_waypoint,wpgpxmaps_map_line_color,wpgpxmaps_map_type,wpgpxmaps_map_start_icon,wpgpxmaps_map_end_icon,wpgpxmaps_map_current_icon,wpgpxmaps_zoomonscrollwheel,wpgpxmaps_map_waypoint_icon,wpgpxmaps_currentpositioncon,wpgpxmaps_show_extreme_markers,wpgpxmaps_elev_color_enabled,wpgpxmaps_elev_color_threshold,wpgpxmaps_elev_color_max" />
 		<input type="submit" class="button-primary" value="<?php _e('Save Changes', "wp_gpx_maps") ?>" />
 	</p>
 

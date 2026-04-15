@@ -113,6 +113,8 @@ Author URI: http://www.devfarm.it/
 		var chartTo1 = params.chartTo1;
 		var chartFrom2 = params.chartFrom2;
 		var chartTo2 = params.chartTo2;
+		var maxEleIndex = parseInt(params.maxEleIndex, 10);
+		var maxSpeedIndex = parseInt(params.maxSpeedIndex, 10);
 		var startIcon = params.startIcon;
 		var waypointIcon = params.waypointIcon;
 		var endIcon = params.endIcon;
@@ -123,6 +125,10 @@ Author URI: http://www.devfarm.it/
 		var usegpsposition = params.usegpsposition;
 		var currentpositioncon= params.currentpositioncon;
 		var ThunderforestApiKey = params.TFApiKey;
+		var maxAltitudeIcon = 'https://maps.google.com/mapfiles/ms/micons/yellow-dot.png';
+		var maxSpeedIcon = 'https://maps.google.com/mapfiles/ms/micons/red-dot.png';
+		if (isNaN(maxEleIndex)) { maxEleIndex = -1; }
+		if (isNaN(maxSpeedIndex)) { maxSpeedIndex = -1; }
 		
 		var hasThunderforestApiKey = (ThunderforestApiKey + '').length > 0;
 		
@@ -582,6 +588,32 @@ Author URI: http://www.devfarm.it/
 						  zIndex: 10
 					  });
 			
+			}
+
+			if (maxEleIndex >= 0 && maxEleIndex < points.length)
+			{
+				var maxAltitudeIconImage = new google.maps.MarkerImage(maxAltitudeIcon);
+				new google.maps.Marker({
+					  position: points[maxEleIndex],
+					  map: map,
+					  title: lng.maxAltitude || 'Max altitude',
+					  animation: google.maps.Animation.DROP,
+					  icon: maxAltitudeIconImage,
+					  zIndex: 10
+				  });
+			}
+
+			if (maxSpeedIndex >= 0 && maxSpeedIndex < points.length)
+			{
+				var maxSpeedIconImage = new google.maps.MarkerImage(maxSpeedIcon);
+				new google.maps.Marker({
+					  position: points[maxSpeedIndex],
+					  map: map,
+					  title: lng.maxSpeed || 'Max speed',
+					  animation: google.maps.Animation.DROP,
+					  icon: maxSpeedIconImage,
+					  zIndex: 10
+				  });
 			}
 
 			var first = getItemFromArray(mapData,0)

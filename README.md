@@ -4,7 +4,7 @@
 **Tags:** maps, gpx, gps, graph, chart, google maps, track, garmin, image, nextgen-gallery, nextgen, exif, OpenStreetMap, OpenCycleMap, Hike&Bike, heart rate, heartrate, cadence
 **Requires at least:** 2.0.0
 **Tested up to:** 6.4
-**Stable tag:** 2.1.0
+**Stable tag:** 2.1.1
 
 Draws a GPX track with altitude graph. You can also display your NextGen Gallery images in the map.
 
@@ -23,6 +23,7 @@ Based up on version 1.3.17 hosted at
 - Privacy mode to trim the start and end of the track and hide exact start/end locations
 - Grade-based elevation coloring on the map (highlights steep sections)
 - Direction arrows along the track at configurable intervals
+- Map markers for max speed and max altitude positions (when data is available)
 - HTML5 GPS position: show the visitor's real-time location on the map and follow their movement
 - Distance type selector: Normal (3D), Flat (horizontal only), or Climb (elevation only) for mountaineering reports
 - Spinner overlay while map initializes
@@ -209,12 +210,17 @@ Yes!
 
 ## Changelog
 
+### 2.1.1 (new)
+
+- Added optional markers for max speed and max elevation to map
+
 ### 2.1.0 (new)
 
 - OSM6: MapTiler Outdoor (hillshading, contour lines, hiking trails).
 - OSM7: MapTiler Topo (classic topographic map with contours).
 - OSM8: MapTiler Landscape (nature-focused with hillshading).
 - DNS prefetch/preconnect updated for api.maptiler.com.
+- Added map markers for max speed and max altitude points.
 
 ### 2.0.1 (new)
 
