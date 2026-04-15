@@ -108,6 +108,14 @@ msgid "Avg altitude"
 msgstr ""
 
 #: ../wp-gpx-maps.php
+msgid "Max altitude"
+msgstr ""
+
+#: ../wp-gpx-maps.php
+msgid "Max speed"
+msgstr ""
+
+#: ../wp-gpx-maps.php
 msgid "Avg elevation"
 msgstr ""
 

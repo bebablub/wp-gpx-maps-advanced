@@ -3,7 +3,7 @@
 Plugin Name: WP-GPX-Maps
 Plugin URI: http://www.devfarm.it/
 Description: Draws a GPX track with altitude chart
-Version: 2.1.0
+Version: 2.1.1
 Author: Bastianon Massimo, Benjamin Barinka
 Author URI: http://www.pedemontanadelgrappa.it/
 */
@@ -112,7 +112,7 @@ function enqueue_WP_GPX_Maps_scripts()
         $wpgpx_deps = array('jquery','googlemaps','highcharts');
         if ($use_hc_v11) { $wpgpx_deps[] = 'highcharts-accessibility'; }
 		// Align script version with plugin header for cache busting
-     	wp_enqueue_script( 'WP-GPX-Maps', plugins_url('/WP-GPX-Maps.js', __FILE__), $wpgpx_deps, "2.1.0", true);
+     	wp_enqueue_script( 'WP-GPX-Maps', plugins_url('/WP-GPX-Maps.js', __FILE__), $wpgpx_deps, "2.1.1", true);
  	}	
 
  }
@@ -310,6 +310,7 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 	$showEle =            findValue($attr, "showele",            "wpgpxmaps_show_elevation",   		 "true");
 	$showSpeed =          findValue($attr, "showspeed",          "wpgpxmaps_show_speed",      		 false);
 	$showGrade =          findValue($attr, "showgrade",          "wpgpxmaps_show_grade",      		 false);	
+	$showExtremeMarkers = findValue($attr, "showextrememarkers", "wpgpxmaps_show_extreme_markers", "true");
 	$zoomOnScrollWheel =  findValue($attr, "zoomonscrollwheel",  "wpgpxmaps_zoomonscrollwheel",      false);
 	$donotreducegpx =     findValue($attr, "donotreducegpx",     "wpgpxmaps_donotreducegpx", 		 false);
 	$pointsoffset =       findValue($attr, "pointsoffset",       "wpgpxmaps_pointsoffset",     		 10);
@@ -376,7 +377,7 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 		$mtime = 0;
 	}
 	// include privacy mode and bump cache version to avoid stale misaligned data
-	$cacheFileName = "$gpx,$mtime,$w,$mh,$mt,$gh,$showEle,$showW,$showHr,$showAtemp,$showCad,$donotreducegpx,$pointsoffset,$showSpeed,$showGrade,$uomspeed,$uom,$distanceType,priv=".($privacymode? '1':'0').",v2.1.0";
+	$cacheFileName = "$gpx,$mtime,$w,$mh,$mt,$gh,$showEle,$showW,$showHr,$showAtemp,$showCad,$donotreducegpx,$pointsoffset,$showSpeed,$showGrade,$uomspeed,$uom,$distanceType,priv=".($privacymode? '1':'0').",v2.1.1";
 
 	$cacheFileName = md5($cacheFileName);
 	
@@ -386,6 +387,10 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 		@mkdir($gpxcache,0755,true);
 	
 	$gpxcache.= DIRECTORY_SEPARATOR.$cacheFileName.".tmp";
+	$max_ele_marker_ele = '';
+	$max_ele_marker_speed = '';
+	$max_speed_marker_ele = '';
+	$max_speed_marker_speed = '';
 	
 	// Try to load cache
  	if (file_exists($gpxcache) && !($skipcache == true)) {
@@ -415,6 +420,12 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 				$total_ele_down = isset($cache_obj["total_ele_down"]) ? $cache_obj["total_ele_down"] : 0;
 				$avg_speed = isset($cache_obj["avg_speed"]) ? $cache_obj["avg_speed"] : 0;
 				$tot_len = isset($cache_obj["tot_len"]) ? $cache_obj["tot_len"] : 0;
+				$max_ele_index = isset($cache_obj["max_ele_index"]) ? intval($cache_obj["max_ele_index"]) : -1;
+				$max_speed_index = isset($cache_obj["max_speed_index"]) ? intval($cache_obj["max_speed_index"]) : -1;
+				$max_ele_marker_ele = isset($cache_obj["max_ele_marker_ele"]) ? $cache_obj["max_ele_marker_ele"] : '';
+				$max_ele_marker_speed = isset($cache_obj["max_ele_marker_speed"]) ? $cache_obj["max_ele_marker_speed"] : '';
+				$max_speed_marker_ele = isset($cache_obj["max_speed_marker_ele"]) ? $cache_obj["max_speed_marker_ele"] : '';
+				$max_speed_marker_speed = isset($cache_obj["max_speed_marker_speed"]) ? $cache_obj["max_speed_marker_speed"] : '';
 			} else {
 				$points_maps = '';
 				$points_x_time = '';
@@ -431,6 +442,12 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 				$waypoints= '[]';
 				$max_ele = 0; $min_ele = 0; $max_time = 0; $min_time = 0; $total_ele_up = 0; $total_ele_down = 0; $avg_speed = 0; $tot_len = 0;
 				$avg_ele_str = '';
+				$max_ele_index = -1;
+				$max_speed_index = -1;
+				$max_ele_marker_ele = '';
+				$max_ele_marker_speed = '';
+				$max_speed_marker_ele = '';
+				$max_speed_marker_speed = '';
 			}
 		} catch (Exception $e) {
 			$points_maps = '';
@@ -448,9 +465,24 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 			$waypoints= '[]';
 			$max_ele = 0; $min_ele = 0; $max_time = 0; $min_time = 0; $total_ele_up = 0; $total_ele_down = 0; $avg_speed = 0; $tot_len = 0;
 			$avg_ele_str = '';
+			$max_ele_index = -1;
+			$max_speed_index = -1;
+			$max_ele_marker_ele = '';
+			$max_ele_marker_speed = '';
+			$max_speed_marker_ele = '';
+			$max_speed_marker_speed = '';
 		}
 	}
 	
+	// Auto-upgrade stale cache: if track data exists but marker indexes/metrics were
+	// never computed, force a reparse so cache is rewritten with all marker data.
+	$missing_extreme_marker_metrics =
+		($max_ele_index >= 0 && ($max_ele_marker_ele === '' || $max_ele_marker_speed === '')) ||
+		($max_speed_index >= 0 && ($max_speed_marker_ele === '' || $max_speed_marker_speed === ''));
+	if (isset($points_maps) && $points_maps !== '' && (($max_ele_index < 0 && $max_speed_index < 0) || $missing_extreme_marker_metrics)) {
+		$points_maps = '';
+	}
+
 	$isGpxUrl = (preg_match('/^(http(s)?\:\/\/)/', trim($gpx)) == 1);
 
 	if ((!isset($points_maps) || $points_maps == '') && $gpx != '')	{
@@ -497,6 +529,14 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 		$points_graph_grade = '';
 		$points_map_grade = '';
 		$waypoints = '';
+		$max_ele_index = -1;
+		$max_speed_index = -1;
+		$max_ele_value = null;
+		$max_speed_value = null;
+		$max_ele_marker_ele = '';
+		$max_ele_marker_speed = '';
+		$max_speed_marker_ele = '';
+		$max_speed_marker_speed = '';
 
 		$points_x_time = $points->dt;
 		$points_x_lat = $points->lat;
@@ -600,7 +640,9 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
                 // The points_x_lat/lon arrays are only used for NGG image geo-matching
                 // and do not need separate trimming.
 
-		if (is_array ($work_lat))
+		if (is_array ($work_lat)) {
+		$rendered_point_index = -1;
+		$nonnull_idx = -1;
 		for ($i = 0; $i < count($work_lat); $i++) {
 			
 			if (!isset($work_lat[$i], $work_lon[$i])) { continue; }
@@ -630,6 +672,7 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 					
 			}
 			else {
+				$nonnull_idx++;
 				$points_maps .= '['.number_format((float)$work_lat[$i], 7 , '.' , '' ).','.number_format((float)$work_lon[$i], 7 , '.' , '' ).'],';	
 
 				$_ele = isset($work_ele[$i]) ? (float)$work_ele[$i] : 0;
@@ -663,10 +706,9 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 				$points_graph_dist .= number_format ( $_dist , 2 , '.' , '' ).',';
 				$points_graph_ele .= number_format ( $_ele , 2 , '.' , '' ).',';
 					
+				$_speed = isset($work_speed[$i]) ? (float)$work_speed[$i] : 0;
+
 				if ($showSpeed == true) {
-					
-					$_speed = isset($work_speed[$i]) ? (float)$work_speed[$i] : 0;
-					
 					$points_graph_speed .= convertSpeed($_speed,$uomspeed).',';
 				}
 				
@@ -688,7 +730,29 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 				}
 				// always collect map grade for coloring feature
 				$points_map_grade .= number_format ( isset($work_grade[$i]) ? $work_grade[$i] : 0 , 2 , '.' , '' ).',';
+
+				// Track max elevation index (raw meters, before UOM conversion)
+				$raw_ele_for_marker = isset($work_ele[$i]) ? $work_ele[$i] : null;
+				if ($raw_ele_for_marker !== null && is_numeric($raw_ele_for_marker)) {
+					$raw_ele_for_marker = (float)$raw_ele_for_marker;
+					if ($max_ele_index < 0 || $raw_ele_for_marker > $max_ele_value) {
+						$max_ele_value = $raw_ele_for_marker;
+						$max_ele_index = $nonnull_idx;
+						$max_ele_marker_ele = number_format($_ele, 2, '.', '');
+						$max_ele_marker_speed = convertSpeed($_speed, $uomspeed);
+					}
+				}
+
+				// Track max speed index (raw m/s)
+				$raw_speed_for_marker = isset($work_speed[$i]) ? (float)$work_speed[$i] : 0;
+				if ($raw_speed_for_marker > 0 && ($max_speed_index < 0 || $raw_speed_for_marker > $max_speed_value)) {
+					$max_speed_value = $raw_speed_for_marker;
+					$max_speed_index = $nonnull_idx;
+					$max_speed_marker_ele = number_format($_ele, 2, '.', '');
+					$max_speed_marker_speed = convertSpeed($_speed, $uomspeed);
+				}
 			}
+		}
 		}	
 
 		if ($uom == '1') {
@@ -753,8 +817,26 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 			$wpoints = getWayPoints($gpx);
 			/*
 			foreach ($wpoints as $p) {
+				$rendered_point_index++;
 				$waypoints .= '['.number_format ( (float)$p[0] , 7 , '.' , '' ).','.number_format ( (float)$p[1] , 7 , '.' , '' ).',\''.unescape($p[4]).'\',\''.unescape($p[5]).'\',\''.unescape($p[7]).'\'],';
-			}
+
+				$raw_ele_for_marker = isset($work_ele[$i]) ? $work_ele[$i] : null;
+				if ($raw_ele_for_marker !== null && $raw_ele_for_marker !== false && is_numeric($raw_ele_for_marker)) {
+					$raw_ele_for_marker = (float)$raw_ele_for_marker;
+					if ($max_ele_index < 0 || $raw_ele_for_marker > $max_ele_value) {
+						$max_ele_value = $raw_ele_for_marker;
+						$max_ele_index = $rendered_point_index;
+					}
+				}
+
+				$raw_speed_for_marker = isset($work_speed[$i]) ? $work_speed[$i] : null;
+				if ($raw_speed_for_marker !== null && $raw_speed_for_marker !== false && is_numeric($raw_speed_for_marker)) {
+					$raw_speed_for_marker = (float)$raw_speed_for_marker;
+					if ($raw_speed_for_marker > 0 && ($max_speed_index < 0 || $raw_speed_for_marker > $max_speed_value)) {
+						$max_speed_value = $raw_speed_for_marker;
+						$max_speed_index = $rendered_point_index;
+					}
+				}
 			*/
 			$waypoints = json_encode($wpoints);
 		}
@@ -851,7 +933,13 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 				"avg_speed"         => $avg_speed,
 				"tot_len"           => $tot_len,
 				"max_time"          => $max_time,
-				"min_time"          => $min_time
+				"min_time"          => $min_time,
+				"max_ele_index"     => $max_ele_index,
+				"max_speed_index"   => $max_speed_index,
+				"max_ele_marker_ele" => $max_ele_marker_ele,
+				"max_ele_marker_speed" => $max_ele_marker_speed,
+				"max_speed_marker_ele" => $max_speed_marker_ele,
+				"max_speed_marker_speed" => $max_speed_marker_speed
 			), JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE),
 			LOCK_EX
 		);
@@ -945,6 +1033,13 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 					chartTo1    : "'.esc_js($chartTo1).'",
 					chartFrom2  : "'.esc_js($chartFrom2).'",
 					chartTo2    : "'.esc_js($chartTo2).'",
+					maxEleIndex : '.intval($max_ele_index).',
+					maxSpeedIndex : '.intval($max_speed_index).',
+					showExtremeMarkers : "'.esc_js($showExtremeMarkers).'",
+					maxEleMarkerEle : "'.esc_js($max_ele_marker_ele).'",
+					maxEleMarkerSpeed : "'.esc_js($max_ele_marker_speed).'",
+					maxSpeedMarkerEle : "'.esc_js($max_speed_marker_ele).'",
+					maxSpeedMarkerSpeed : "'.esc_js($max_speed_marker_speed).'",
 					startIcon   : "'.esc_js($startIcon).'",
 					endIcon     : "'.esc_js($endIcon).'",
 					currentIcon : "'.esc_js($currentIcon).'",
@@ -973,7 +1068,9 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 							  showImages            : "'.__("Show Images", "wp-gpx-maps").'",
 							  backToCenter		    : "'.__("Back to center", "wp-gpx-maps").'",
 							  avgLabel              : "'.__("avg", "wp-gpx-maps").'",
-							  avgAltitude           : "'.__("Avg altitude", "wp-gpx-maps").'"
+							  avgAltitude           : "'.__("Avg altitude", "wp-gpx-maps").'",
+							  maxAltitude           : "'.__("Max altitude", "wp-gpx-maps").'",
+							  maxSpeed              : "'.__("Max speed", "wp-gpx-maps").'"
 						}
 				});
 					});
@@ -1094,7 +1191,7 @@ function downloadRemoteFile($remoteFile)
 		$args = array(
 			'timeout'      => 12,
 			'redirection'  => 3,
-			'headers'      => array( 'User-Agent' => 'WP-GPX-Maps/2.1.0' ),
+			'headers'      => array( 'User-Agent' => 'WP-GPX-Maps/2.1.1' ),
 			'reject_unsafe_urls' => true,
 		);
 		$response = wp_remote_get( $remoteFile, $args );
@@ -1174,6 +1271,7 @@ function WP_GPX_Maps_install() {
 	add_option('wpgpxmaps_elev_color_enabled', '', '', 'yes');
 	add_option('wpgpxmaps_elev_color_threshold', '5', '', 'yes');
 	add_option('wpgpxmaps_elev_color_max', '12', '', 'yes');
+	add_option('wpgpxmaps_show_extreme_markers', 'true', '', 'yes');
 	// MapTiler API key
 	add_option('wpgpxmaps_maptiler_apikey', '', '', 'yes');
 	add_option('wpgpxmaps_summary_avg_ele', '', '', 'yes');
@@ -1219,6 +1317,7 @@ function WP_GPX_Maps_remove() {
 	delete_option('wpgpxmaps_elev_color_enabled');
 	delete_option('wpgpxmaps_elev_color_threshold');
 	delete_option('wpgpxmaps_elev_color_max');
+	delete_option('wpgpxmaps_show_extreme_markers');
 	delete_option('wpgpxmaps_summary_avg_ele');
 	delete_option('wpgpxmaps_privacymode');
 }
