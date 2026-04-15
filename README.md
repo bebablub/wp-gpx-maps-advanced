@@ -220,6 +220,7 @@ Yes!
 - OSM7: MapTiler Topo (classic topographic map with contours).
 - OSM8: MapTiler Landscape (nature-focused with hillshading).
 - DNS prefetch/preconnect updated for api.maptiler.com.
+- Added map markers for max speed and max altitude points.
 
 ### 2.0.1 (new)
 
