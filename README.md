@@ -14,7 +14,7 @@ Draws a GPX track with altitude graph. You can also display your NextGen Gallery
 
 This plugin takes a GPX file with the track you have made and displays the map of the track with an interactive altitude graph (where available).
 
-Based up on version 1.3.17 of
+Based up on version 1.3.17 hosted at
 **GitHub:** https://github.com/devfarm-it/wp-gpx-maps
 
 ### Features
@@ -71,9 +71,6 @@ Extended by Stephan Klein ([klein-gedruckt.de](https://klein-gedruckt.de/2015/03
 Many thanks to all who helped with translations.
 
 - iPhone/iPad/iPod compatible
-
-**Demo:** http://www.pedemontanadelgrappa.it/category/mappe/
-**Support Forum:** http://www.devfarm.it/forums/forum/wp-gpx-maps/
 
 ---
 
