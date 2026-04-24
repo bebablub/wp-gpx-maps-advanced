@@ -3,7 +3,7 @@
 Plugin Name: WP-GPX-Maps
 Plugin URI: http://www.devfarm.it/
 Description: Draws a GPX track with altitude chart
-Version: 2.1.1
+Version: 3.0.0
 Author: Bastianon Massimo, Benjamin Barinka
 Author URI: http://www.pedemontanadelgrappa.it/
 */
@@ -87,6 +87,13 @@ function enqueue_WP_GPX_Maps_scripts()
 {      
 	$wpgpxmaps_googlemapsv3_apikey = get_option('wpgpxmaps_googlemapsv3_apikey');
 	$wpgpxmaps_googlemaps_map_id = get_option('wpgpxmaps_googlemaps_map_id');
+	$wpgpxmaps_map_engine = get_option('wpgpxmaps_map_engine');
+	if (!$wpgpxmaps_map_engine) {
+		$wpgpxmaps_map_engine = 'maplibre';
+	}
+	if ($wpgpxmaps_map_engine !== 'google' && $wpgpxmaps_map_engine !== 'maplibre') {
+		$wpgpxmaps_map_engine = 'maplibre';
+	}
 	wp_enqueue_script( 'jquery' );
 	// Load only when shortcode detected
 	if ( isset($GLOBALS['wpgpxmaps_should_enqueue']) && $GLOBALS['wpgpxmaps_should_enqueue'] !== true ) {
@@ -94,10 +101,16 @@ function enqueue_WP_GPX_Maps_scripts()
 	}
 	{
 		$mapIdParam = $wpgpxmaps_googlemaps_map_id ? ('&map_ids='.urlencode($wpgpxmaps_googlemaps_map_id)) : '';
-		if ($wpgpxmaps_googlemapsv3_apikey)	{     
-			wp_enqueue_script('googlemaps', 'https://maps.googleapis.com/maps/api/js?key='.$wpgpxmaps_googlemapsv3_apikey.'&loading=async&libraries=marker&v=weekly'.$mapIdParam, array(), null, true);
-		}	else	{     
-			wp_enqueue_script('googlemaps', 'https://maps.googleapis.com/maps/api/js?loading=async&libraries=marker&v=weekly'.$mapIdParam, array(), null, true);
+		if ($wpgpxmaps_map_engine === 'maplibre') {
+			wp_enqueue_style('wpgpxmaps-maplibre-css', plugins_url('/js/maplibre/maplibre-gl.css', __FILE__), array(), null);
+			wp_enqueue_script('wpgpxmaps-maplibre', plugins_url('/js/maplibre/maplibre-gl.js', __FILE__), array(), null, true);
+		}
+		if ($wpgpxmaps_map_engine === 'google') {
+			if ($wpgpxmaps_googlemapsv3_apikey)	{     
+				wp_enqueue_script('googlemaps', 'https://maps.googleapis.com/maps/api/js?key='.$wpgpxmaps_googlemapsv3_apikey.'&loading=async&libraries=marker&v=weekly'.$mapIdParam, array(), null, true);
+			}	else	{     
+				wp_enqueue_script('googlemaps', 'https://maps.googleapis.com/maps/api/js?loading=async&libraries=marker&v=weekly'.$mapIdParam, array(), null, true);
+			}
 		}
         // Load Highcharts version based on setting
         $use_hc_v11 = get_option('wpgpxmaps_highcharts_v11');
@@ -109,10 +122,12 @@ function enqueue_WP_GPX_Maps_scripts()
         } else {
             wp_enqueue_script( 'highcharts', plugins_url('/js/highcharts/v3.0.10/highcharts.js', __FILE__), array('jquery'), "3.0.10", true);
         }
-        $wpgpx_deps = array('jquery','googlemaps','highcharts');
+		$wpgpx_deps = array('jquery','highcharts');
+		if ($wpgpxmaps_map_engine === 'google') { $wpgpx_deps[] = 'googlemaps'; }
+		if ($wpgpxmaps_map_engine === 'maplibre') { $wpgpx_deps[] = 'wpgpxmaps-maplibre'; }
         if ($use_hc_v11) { $wpgpx_deps[] = 'highcharts-accessibility'; }
 		// Align script version with plugin header for cache busting
-     	wp_enqueue_script( 'WP-GPX-Maps', plugins_url('/WP-GPX-Maps.js', __FILE__), $wpgpx_deps, "2.1.1", true);
+     	wp_enqueue_script( 'WP-GPX-Maps', plugins_url('/WP-GPX-Maps.js', __FILE__), $wpgpx_deps, "3.0.0", true);
  	}	
 
  }
@@ -348,6 +363,10 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 	$download =           findValue($attr, "download",           "wpgpxmaps_download", 		     "");
 	$dtoffset =           findValue($attr, "dtoffset",           "wpgpxmaps_dtoffset", 		     0);
 	$distanceType =       findValue($attr, "distanceType",       "wpgpxmaps_distance_type", 		 0);
+	$mapEngine =          findValue($attr, "mapengine",          "wpgpxmaps_map_engine",           "maplibre");
+	if ($mapEngine !== 'google' && $mapEngine !== 'maplibre') {
+		$mapEngine = 'maplibre';
+	}
 	
 	$skipcache =          findValue($attr, "skipcache",          "wpgpxmaps_skipcache", 	     "");
 	$privacymode =        findValue($attr, "privacymode",          "wpgpxmaps_privacymode", 	     "");
@@ -1003,11 +1022,13 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 		'. $error .'
 		<script type="text/javascript">
 			window.WPGPXMAPS_MAP_ID = "'.esc_js(get_option('wpgpxmaps_googlemaps_map_id')).'";
+			window.WPGPXMAPS_MAP_ENGINE = "'.esc_js($mapEngine).'";
 			(function initWPGPX(){
 				if (window.jQuery && jQuery.fn && jQuery.fn.wpgpxmaps) {
 					jQuery(function(){
 						jQuery("#wpgpxmaps_'.$r.'").wpgpxmaps({ 
 					targetId    : "'.$r.'",
+						mapEngine   : "'.esc_js($mapEngine).'",
 					mapType     : "'.esc_js($mt).'",
 					mapData     : ['.$points_maps.'],
 					graphDist   : ['.($hideGraph ? '' : $points_graph_dist).'],
@@ -1274,6 +1295,7 @@ function WP_GPX_Maps_install() {
 	add_option('wpgpxmaps_show_extreme_markers', 'true', '', 'yes');
 	// MapTiler API key
 	add_option('wpgpxmaps_maptiler_apikey', '', '', 'yes');
+	add_option('wpgpxmaps_map_engine', 'maplibre', '', 'yes');
 	add_option('wpgpxmaps_summary_avg_ele', '', '', 'yes');
 	add_option('wpgpxmaps_privacymode', '', '', 'yes');
 }
@@ -1318,6 +1340,7 @@ function WP_GPX_Maps_remove() {
 	delete_option('wpgpxmaps_elev_color_threshold');
 	delete_option('wpgpxmaps_elev_color_max');
 	delete_option('wpgpxmaps_show_extreme_markers');
+	delete_option('wpgpxmaps_map_engine');
 	delete_option('wpgpxmaps_summary_avg_ele');
 	delete_option('wpgpxmaps_privacymode');
 }

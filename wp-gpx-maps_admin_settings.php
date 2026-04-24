@@ -40,6 +40,11 @@
 	
 	$usegpsposition = get_option("wpgpxmaps_usegpsposition");	
 	$distanceType = get_option("wpgpxmaps_distance_type");			
+	$mapEngine = get_option("wpgpxmaps_map_engine");
+	if ($mapEngine == '')
+		$mapEngine = 'maplibre';
+	if ($mapEngine !== 'google' && $mapEngine !== 'maplibre')
+		$mapEngine = 'maplibre';
 
 	if (empty($showEle))
 		$showEle = "true";
@@ -123,6 +128,15 @@
 				<input name="wpgpxmaps_usegpsposition" type="checkbox" value="true" <?php if($usegpsposition == true){echo('checked');} ?> onchange="this.value = (this.checked)"  /> <i>Allow users to use browser GPS in order to display their current position on map</i>
 			</td>
 		</tr>
+		<tr>
+			<th scope="row">Map engine:</th>
+			<td>
+				<select name="wpgpxmaps_map_engine" id="wpgpxmaps_map_engine">
+					<option value="maplibre" <?php if ($mapEngine == 'maplibre') echo 'selected'; ?>>MapLibre (default)</option>
+					<option value="google" <?php if ($mapEngine == 'google') echo 'selected'; ?>>Google Maps (legacy fallback)</option>
+				</select>
+			</td>
+		</tr>
 		<tr>			
 			<th scope="row">Google maps api key:</th>			
 			<td>				
@@ -151,7 +165,7 @@
 	
 	<p class="submit">
 		<input type="hidden" name="action" value="update" />
-    	<input name="page_options" type="hidden" value="wpgpxmaps_height,wpgpxmaps_graph_height,wpgpxmaps_width,wpgpxmaps_download,wpgpxmaps_skipcache,wpgpxmaps_privacymode,wpgpxmaps_distance_type,wpgpxmaps_usegpsposition,wpgpxmaps_googlemapsv3_apikey,wpgpxmaps_openstreetmap_apikey,wpgpxmaps_maptiler_apikey,wpgpxmaps_googlemaps_map_id,wpgpxmaps_arrows_enabled,wpgpxmaps_arrows_km" />
+	    <input name="page_options" type="hidden" value="wpgpxmaps_height,wpgpxmaps_graph_height,wpgpxmaps_width,wpgpxmaps_download,wpgpxmaps_skipcache,wpgpxmaps_privacymode,wpgpxmaps_distance_type,wpgpxmaps_usegpsposition,wpgpxmaps_map_engine,wpgpxmaps_googlemapsv3_apikey,wpgpxmaps_openstreetmap_apikey,wpgpxmaps_maptiler_apikey,wpgpxmaps_googlemaps_map_id,wpgpxmaps_arrows_enabled,wpgpxmaps_arrows_km" />
 		<input type="submit" class="button-primary" value="<?php _e('Save Changes', "wp_gpx_maps") ?>" />
 	</p>
 

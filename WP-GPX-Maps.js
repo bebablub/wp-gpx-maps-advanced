@@ -145,8 +145,781 @@ Author URI: http://www.pedemontanadelgrappa.it/
 		}
 		};
 	}
+
+	function wpgpxmaps_maplibre_style_for_type(mapType, hasThunderforestApiKey, thunderforestApiKey, hasMaptilerApiKey, maptilerApiKey) {
+		var tileUrl = wpgpxmaps_maplibre_tile_url_for_type(mapType, hasThunderforestApiKey, thunderforestApiKey, hasMaptilerApiKey, maptilerApiKey);
+		var attribution = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+		return {
+			version: 8,
+			sources: {
+				wpgpxmaps_raster: {
+					type: 'raster',
+					tiles: [tileUrl],
+					tileSize: 256,
+					attribution: attribution
+				}
+			},
+			layers: [
+				{ id: 'wpgpxmaps_bg', type: 'background', paint: { 'background-color': '#f5f6f7' } },
+				{ id: 'wpgpxmaps_raster_layer', type: 'raster', source: 'wpgpxmaps_raster' }
+			]
+		};
+	}
+
+	function wpgpxmaps_maplibre_tile_url_for_type(mapType, hasThunderforestApiKey, thunderforestApiKey, hasMaptilerApiKey, maptilerApiKey) {
+		var tileUrl = '';
+		var attribution = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+		switch (mapType) {
+			case 'OSM2':
+				tileUrl = hasThunderforestApiKey ?
+					('https://a.tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=' + thunderforestApiKey) :
+					'https://a.tile.opencyclemap.org/cycle/{z}/{x}/{y}.png';
+				break;
+			case 'OSM4':
+				tileUrl = hasThunderforestApiKey ?
+					('https://a.tile.thunderforest.com/transport/{z}/{x}/{y}.png?apikey=' + thunderforestApiKey) :
+					'https://a.tile2.opencyclemap.org/transport/{z}/{x}/{y}.png';
+				break;
+			case 'OSM5':
+				tileUrl = hasThunderforestApiKey ?
+					('https://a.tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey=' + thunderforestApiKey) :
+					'https://a.tile3.opencyclemap.org/landscape/{z}/{x}/{y}.png';
+				break;
+			case 'OSM6':
+				tileUrl = hasMaptilerApiKey ?
+					('https://api.maptiler.com/maps/outdoor-v2/256/{z}/{x}/{y}.png?key=' + maptilerApiKey) :
+					'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+				break;
+			case 'OSM7':
+				tileUrl = hasMaptilerApiKey ?
+					('https://api.maptiler.com/maps/topo-v2/256/{z}/{x}/{y}.png?key=' + maptilerApiKey) :
+					'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+				break;
+			case 'OSM8':
+				tileUrl = hasMaptilerApiKey ?
+					('https://api.maptiler.com/maps/landscape/256/{z}/{x}/{y}.png?key=' + maptilerApiKey) :
+					'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+				break;
+			case 'SATELLITE':
+			case 'TERRAIN':
+			case 'HYBRID':
+				// Legacy Google map types mapped to open tiles.
+				tileUrl = hasThunderforestApiKey ?
+					('https://a.tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey=' + thunderforestApiKey) :
+					'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+				break;
+			case 'ROADMAP':
+			case 'OSM1':
+			default:
+				tileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+				break;
+		}
+
+		return tileUrl;
+	}
+
+	function wpgpxmaps_render_maplibre(params) {
+		var targetId = params.targetId;
+		var mapType = params.mapType;
+		var mapData = params.mapData;
+		var color1 = params.color1 || ['#3366cc'];
+		var zoomOnScrollWheel = params.zoomOnScrollWheel;
+		var waypoints = params.waypoints || [];
+		var startIcon = params.startIcon;
+		var endIcon = params.endIcon;
+		var currentIcon = params.currentIcon;
+		var usegpsposition = params.usegpsposition;
+		var currentpositioncon = params.currentpositioncon;
+		var lng = params.langs || {};
+		var pluginUrl = params.pluginUrl || '';
+		var unit = params.unit;
+		var unitspeed = params.unitspeed;
+		var graphEle = params.graphEle || [];
+		var graphSpeed = params.graphSpeed || [];
+		var graphDist = params.graphDist || [];
+		var graphHr = params.graphHr || [];
+		var graphAtemp = params.graphAtemp || [];
+		var graphCad = params.graphCad || [];
+		var graphGrade = params.graphGrade || [];
+		var color2 = params.color2;
+		var color3 = params.color3;
+		var color4 = params.color4;
+		var color5 = params.color5;
+		var color6 = params.color6;
+		var color7 = params.color7;
+		var showExtremeMarkers = ((params.showExtremeMarkers + '') !== 'false');
+		var maxEleIndex = parseInt(params.maxEleIndex, 10);
+		var maxSpeedIndex = parseInt(params.maxSpeedIndex, 10);
+		var maxEleMarkerEle = params.maxEleMarkerEle;
+		var maxEleMarkerSpeed = params.maxEleMarkerSpeed;
+		var maxSpeedMarkerEle = params.maxSpeedMarkerEle;
+		var maxSpeedMarkerSpeed = params.maxSpeedMarkerSpeed;
+		var ThunderforestApiKey = params.TFApiKey;
+		var MTApiKey = params.MTApiKey || '';
+		var hasThunderforestApiKey = (ThunderforestApiKey + '').length > 0;
+		var hasMaptilerApiKey = (MTApiKey + '').length > 0;
+
+		var el = document.getElementById('wpgpxmaps_' + targetId);
+		var el_map = document.getElementById('map_' + targetId);
+		var el_osm_credits = document.getElementById('wpgpxmaps_' + targetId + '_osm_footer');
+		var el_spinner = document.getElementById('spinner_' + targetId);
+
+		if (!window.maplibregl || !el_map) {
+			if (el_map) {
+				el_map.innerHTML = '<p style="padding:10px;color:#c00;">MapLibre failed to load.</p>';
+			}
+			if (el_spinner) { el_spinner.style.display = 'none'; }
+			return;
+		}
+
+		if (el_spinner) { el_spinner.style.display = 'flex'; }
+		if (el_osm_credits) { jQuery(el_osm_credits).show(); }
+
+		function marker_ele_fmt(v) {
+			if (v === undefined || v === null || v === '') { return ''; }
+			return getElevationFormatByUnit(unit)(v);
+		}
+
+		function marker_speed_fmt(v) {
+			if (v === undefined || v === null || v === '') { return ''; }
+			return getSpeedFormatByUnit(unitspeed)(v);
+		}
+
+		function popup_waypoint_html(title, descr, lat, lon) {
+			var cnt = '';
+			if (!title) {
+				cnt = '<div>' + unescape(descr || '') + '</div>';
+			} else {
+				cnt = '<div><b>' + title + '</b><br />' + unescape(descr || '') + '</div>';
+			}
+			cnt += "<br /><p><a href='https://maps.google.com?daddr=" + lat + ',' + lon + "' target='_blank'>Itin&eacute;raire</a></p>";
+			return cnt;
+		}
+
+		function add_icon_marker(m, lngLat, iconUrl, title, popupHtml) {
+			var markerEl = document.createElement('div');
+			markerEl.className = 'wpgpxmaps-maplibre-marker';
+			if (iconUrl) {
+				markerEl.style.width = '24px';
+				markerEl.style.height = '24px';
+				markerEl.style.backgroundImage = 'url(' + iconUrl + ')';
+				markerEl.style.backgroundSize = 'contain';
+				markerEl.style.backgroundRepeat = 'no-repeat';
+				markerEl.style.backgroundPosition = 'center';
+				markerEl.style.cursor = 'pointer';
+			} else {
+				markerEl.style.width = '14px';
+				markerEl.style.height = '14px';
+				markerEl.style.borderRadius = '50%';
+				markerEl.style.backgroundColor = '#1565c0';
+				markerEl.style.border = '2px solid #fff';
+				markerEl.style.boxShadow = '0 0 3px rgba(0,0,0,0.35)';
+			}
+
+			if (title) {
+				markerEl.setAttribute('title', title);
+			}
+
+			var marker = new maplibregl.Marker({ element: markerEl, anchor: 'center' })
+				.setLngLat(lngLat)
+				.addTo(m);
+
+			if (popupHtml) {
+				var popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true }).setHTML(popupHtml);
+				markerEl.addEventListener('click', function() {
+					popup.setLngLat(lngLat).addTo(m);
+				});
+			}
+
+			return marker;
+		}
+
+		function resolve_maplibre_image_url($img) {
+			var url = $img.attr('src') || '';
+			var fallbacks = ['data-src', 'data-lazy-src', 'data-original', 'data-litespeed-src'];
+			for (var k = 0; k < fallbacks.length; k++) {
+				if (!url || url === '' || /placeholder|transparent/.test(url)) {
+					var cand = $img.attr(fallbacks[k]);
+					if (cand) { url = cand; break; }
+				}
+			}
+			return url;
+		}
+
+		function add_maplibre_ng_image_marker(m, imageUrl, imageLat, imageLon, markersList) {
+			var ilat = ('' + imageLat).replace(',', '.');
+			var ilon = ('' + imageLon).replace(',', '.');
+			var lat = parseFloat(ilat);
+			var lon = parseFloat(ilon);
+			if (isNaN(lat) || isNaN(lon) || !imageUrl) { return null; }
+
+			var imgEl = document.createElement('img');
+			imgEl.src = imageUrl;
+			imgEl.className = 'myngimages';
+			imgEl.setAttribute('lat', lat);
+			imgEl.setAttribute('lon', lon);
+			imgEl.setAttribute('decoding', 'async');
+			imgEl.style.cssText = 'position:absolute;width:38px;height:38px;object-fit:cover;transform:scale(1);transform-origin:top left;transition:transform 120ms ease;will-change:transform;z-index:1;';
+
+			var hovering = false;
+			var restoreTimer = null;
+			jQuery(imgEl).on('mouseenter', function() {
+				if (restoreTimer) { clearTimeout(restoreTimer); restoreTimer = null; }
+				if (hovering) { return; }
+				hovering = true;
+				imgEl.style.zIndex = 100;
+				imgEl.style.transform = 'scale(2.47)';
+			});
+			jQuery(imgEl).on('mouseleave', function() {
+				restoreTimer = setTimeout(function() {
+					hovering = false;
+					imgEl.style.transform = 'scale(1)';
+					imgEl.style.zIndex = 1;
+				}, 60);
+			});
+
+			var marker = new maplibregl.Marker({ element: imgEl, anchor: 'top-left' })
+				.setLngLat([lon, lat])
+				.addTo(m);
+
+			if (markersList) { markersList.push(marker); }
+			return marker;
+		}
+
+		function wpgpxmaps_maplibre_render_charts(chartMarker) {
+			var graphh = jQuery('#hchart_' + targetId).css('height');
+			if (graphDist == '' || (graphEle == '' && graphSpeed == '' && graphHr == '' && graphAtemp == '' && graphCad == '' && graphGrade == '') || graphh == '0px') {
+				jQuery('#hchart_' + targetId).css('display', 'none');
+				return null;
+			}
+
+			if (!(window.innerWidth >= 800) || (/Mobile|iPhone|iPad|Android.*Mobile/i.test(navigator.userAgent))) {
+				jQuery('#hchart_' + targetId).css('display', 'none');
+				return null;
+			}
+
+			var l_x;
+			if (unit == '1') { l_x = { suf: 'mi', dec: 1 }; }
+			else if (unit == '2') { l_x = { suf: 'km', dec: 1 }; }
+			else if (unit == '3') { l_x = { suf: 'NM', dec: 1 }; }
+			else if (unit == '4') { l_x = { suf: 'mi', dec: 1 }; }
+			else if (unit == '5') { l_x = { suf: 'NM', dec: 1 }; }
+			else { l_x = { suf: 'm', dec: 0 }; }
+
+			var speedFmt = { suf: 'm/s', dec: 0 };
+			if (unitspeed == '6') { speedFmt = { suf: 'min/100m', dec: 2 }; }
+			else if (unitspeed == '5') { speedFmt = { suf: 'knots', dec: 2 }; }
+			else if (unitspeed == '4') { speedFmt = { suf: 'min/mi', dec: 2 }; }
+			else if (unitspeed == '3') { speedFmt = { suf: 'min/km', dec: 2 }; }
+			else if (unitspeed == '2') { speedFmt = { suf: 'mi/h', dec: 0 }; }
+			else if (unitspeed == '1') { speedFmt = { suf: 'km/h', dec: 0 }; }
+
+			var series = [];
+			var yAxis = [];
+			var fmts = [];
+			var distToMapIndex = [];
+
+			function addSeries(values, name, color, fmt) {
+				if (!values || values == '') { return; }
+				var data = [];
+				for (var i = 0; i < graphDist.length; i++) {
+					if (graphDist[i] != null && values[i] != null) {
+						data.push([graphDist[i], values[i], i]);
+						distToMapIndex.push(i);
+					}
+				}
+				if (!data.length) { return; }
+				yAxis.push({ title: { text: null }, opposite: (series.length % 2) === 1 });
+				series.push({
+					name: name,
+					lineWidth: 1,
+					marker: { radius: 0 },
+					data: data,
+					color: color,
+					yAxis: series.length,
+					wpgpxfmt: fmt,
+					turboThreshold: 0
+				});
+				fmts.push(fmt);
+			}
+
+			addSeries(graphEle, lng.altitude || 'Altitude', color2 || '#4a90e2', { suf: (unit == '1' || unit == '5') ? 'ft' : 'm', dec: 0 });
+			addSeries(graphSpeed, lng.speed || 'Speed', color3 || '#f39c12', speedFmt);
+			addSeries(graphHr, lng.heartRate || 'Heart Rate', color4 || '#c0392b', { suf: 'bpm', dec: 0 });
+			addSeries(graphAtemp, lng.atemp || 'Temperature', color7 || '#16a085', { suf: '°C', dec: 0 });
+			addSeries(graphCad, lng.cadence || 'Cadence', color5 || '#8e44ad', { suf: 'rpm', dec: 0 });
+			addSeries(graphGrade, lng.grade || 'Grade', color6 || '#2c3e50', { suf: '%', dec: 0 });
+
+			if (!series.length) {
+				jQuery('#hchart_' + targetId).css('display', 'none');
+				return null;
+			}
+
+			var hchart = new Highcharts.Chart({
+				chart: {
+					renderTo: 'hchart_' + targetId,
+					type: 'area',
+					zoomType: 'x'
+				},
+				title: { text: null },
+				xAxis: {
+					type: 'linear',
+					labels: {
+						formatter: function() {
+							return Highcharts.numberFormat(this.value, l_x.dec) + l_x.suf;
+						}
+					}
+				},
+				yAxis: yAxis,
+				legend: {
+					align: 'center',
+					verticalAlign: 'top',
+					y: -5,
+					floating: true,
+					borderWidth: 0
+				},
+				tooltip: {
+					shared: true,
+					crosshairs: true,
+					formatter: function() {
+						if (chartMarker) {
+							var idx = -1;
+							for (var k = 0; k < graphDist.length; k++) {
+								if (graphDist[k] == this.x) { idx = k; break; }
+							}
+							if (idx >= 0 && mapData && mapData[idx]) {
+								chartMarker.setLngLat([mapData[idx][1], mapData[idx][0]]);
+							}
+						}
+						var tooltip = '<b>' + Highcharts.numberFormat(this.x, l_x.dec) + l_x.suf + '</b><br />';
+						for (var i = 0; i < this.points.length; i++) {
+							var point = this.points[i];
+							var pointFmt = (point.series && point.series.options && point.series.options.wpgpxfmt) ? point.series.options.wpgpxfmt : fmts[i];
+							if (!pointFmt) { pointFmt = { suf: '', dec: 0 }; }
+							tooltip += point.series.name + ': ' + Highcharts.numberFormat(point.y, pointFmt.dec) + pointFmt.suf + '<br />';
+						}
+						return tooltip;
+					}
+				},
+				plotOptions: {
+					area: {
+						fillOpacity: 0.1,
+						connectNulls: true,
+						marker: { enabled: false, radius: 2 }
+					}
+				},
+				credits: { enabled: false },
+				series: series
+			});
+
+			return hchart;
+		}
+
+		var map = new maplibregl.Map({
+			container: el_map,
+			style: wpgpxmaps_maplibre_style_for_type(mapType, hasThunderforestApiKey, ThunderforestApiKey, hasMaptilerApiKey, MTApiKey),
+			attributionControl: true
+		});
+		map.addControl(new maplibregl.NavigationControl(), 'top-left');
+
+		if (zoomOnScrollWheel == 'true') {
+			map.scrollZoom.enable();
+		} else {
+			map.scrollZoom.disable();
+		}
+		map.dragRotate.disable();
+		map.touchZoomRotate.disableRotation();
+
+		var bounds = new maplibregl.LngLatBounds();
+		var hasBounds = false;
+		var trackPoints = [];
+		var chartMarker = null;
+		var hchart = null;
+		var backToCenterBtn = null;
+		var ngImageMarkers = [];
+		var ngImagesControlBtn = null;
+		var mapTypeControl = null;
+
+		function get_track_point_by_map_index(idx) {
+			if (!mapData || idx === undefined || idx === null || idx < 0 || idx >= mapData.length) { return null; }
+			if (mapData[idx] && mapData[idx][0] != null && mapData[idx][1] != null) {
+				return [mapData[idx][1], mapData[idx][0]];
+			}
+			var left = idx - 1;
+			var right = idx + 1;
+			while (left >= 0 || right < mapData.length) {
+				if (left >= 0 && mapData[left] && mapData[left][0] != null && mapData[left][1] != null) {
+					return [mapData[left][1], mapData[left][0]];
+				}
+				if (right < mapData.length && mapData[right] && mapData[right][0] != null && mapData[right][1] != null) {
+					return [mapData[right][1], mapData[right][0]];
+				}
+				left = left - 1;
+				right = right + 1;
+			}
+			return null;
+		}
+
+		function ensure_back_to_center_button() {
+			if (backToCenterBtn || !el_map) { return; }
+			backToCenterBtn = document.createElement('button');
+			backToCenterBtn.type = 'button';
+			backToCenterBtn.className = 'wpgpxmaps-maplibre-back-btn';
+			backToCenterBtn.innerHTML = (lng.backToCenter || 'Back to center');
+			backToCenterBtn.style.position = 'absolute';
+			backToCenterBtn.style.top = '10px';
+			backToCenterBtn.style.right = '10px';
+			backToCenterBtn.style.zIndex = '4';
+			backToCenterBtn.style.padding = '6px 10px';
+			backToCenterBtn.style.border = '1px solid #c7c7c7';
+			backToCenterBtn.style.background = '#fff';
+			backToCenterBtn.style.cursor = 'pointer';
+			backToCenterBtn.style.display = 'none';
+			el_map.appendChild(backToCenterBtn);
+
+			backToCenterBtn.addEventListener('click', function() {
+				if (hasBounds) {
+					map.fitBounds(bounds, { padding: 20, maxZoom: 15 });
+				}
+				backToCenterBtn.style.display = 'none';
+			});
+		}
+
+		function ensure_toggle_images_button() {
+			if (ngImagesControlBtn || !el_map || !pluginUrl) { return; }
+			ngImagesControlBtn = document.createElement('img');
+			ngImagesControlBtn.src = pluginUrl + '/wp-gpx-maps/img/hideImages.png';
+			ngImagesControlBtn.style.position = 'absolute';
+			ngImagesControlBtn.style.top = '80px';
+			ngImagesControlBtn.style.left = '10px';
+			ngImagesControlBtn.style.zIndex = '4';
+			ngImagesControlBtn.style.cursor = 'pointer';
+			ngImagesControlBtn.style.display = 'none';
+			ngImagesControlBtn.title = lng.hideImages || 'Hide images';
+			ngImagesControlBtn.isImagesHidden = false;
+			el_map.appendChild(ngImagesControlBtn);
+
+			ngImagesControlBtn.addEventListener('click', function() {
+				var isImagesHidden = (ngImagesControlBtn.isImagesHidden === true);
+				for (var i = 0; i < ngImageMarkers.length; i++) {
+					var elm = ngImageMarkers[i] && ngImageMarkers[i].getElement ? ngImageMarkers[i].getElement() : null;
+					if (elm) {
+						elm.style.display = isImagesHidden ? 'block' : 'none';
+					}
+				}
+
+				if (isImagesHidden) {
+					ngImagesControlBtn.src = pluginUrl + '/wp-gpx-maps/img/hideImages.png';
+					ngImagesControlBtn.title = lng.hideImages || 'Hide images';
+				} else {
+					ngImagesControlBtn.src = pluginUrl + '/wp-gpx-maps/img/showImages.png';
+					ngImagesControlBtn.title = lng.showImages || 'Show images';
+				}
+				ngImagesControlBtn.isImagesHidden = !isImagesHidden;
+			});
+		}
+
+		function ensure_map_type_control() {
+			if (mapTypeControl || !el_map) { return; }
+			mapTypeControl = document.createElement('select');
+			mapTypeControl.className = 'wpgpxmaps-maplibre-maptype';
+			mapTypeControl.style.position = 'absolute';
+			mapTypeControl.style.top = '44px';
+			mapTypeControl.style.right = '10px';
+			mapTypeControl.style.zIndex = '4';
+			mapTypeControl.style.padding = '4px 6px';
+			mapTypeControl.style.border = '1px solid #c7c7c7';
+			mapTypeControl.style.background = '#fff';
+
+			var opts = [
+				{ value: 'OSM1', label: 'OpenStreetMap' },
+				{ value: 'OSM2', label: 'OpenCycleMap' },
+				{ value: 'OSM4', label: 'Transport' },
+				{ value: 'OSM5', label: 'Landscape' },
+				{ value: 'OSM6', label: 'Outdoor' },
+				{ value: 'OSM7', label: 'Topo' },
+				{ value: 'OSM8', label: 'MapTiler Landscape' }
+			];
+			for (var i = 0; i < opts.length; i++) {
+				var op = document.createElement('option');
+				op.value = opts[i].value;
+				op.text = opts[i].label;
+				if ((mapType + '') === opts[i].value) { op.selected = true; }
+				mapTypeControl.appendChild(op);
+			}
+
+			mapTypeControl.addEventListener('change', function() {
+				mapType = this.value;
+				var tileUrl = wpgpxmaps_maplibre_tile_url_for_type(mapType, hasThunderforestApiKey, ThunderforestApiKey, hasMaptilerApiKey, MTApiKey);
+				var src = map.getSource('wpgpxmaps_raster');
+				if (src && src.setTiles) {
+					src.setTiles([tileUrl]);
+				}
+			});
+
+			el_map.appendChild(mapTypeControl);
+		}
+
+		map.on('load', function() {
+			ensure_back_to_center_button();
+			ensure_toggle_images_button();
+			ensure_map_type_control();
+			var features = [];
+			var segment = [];
+			var segIndex = 0;
+
+			function flushSegment() {
+				if (segment.length > 1) {
+					features.push({
+						type: 'Feature',
+						properties: { color: color1[segIndex % color1.length] || color1[color1.length - 1] || '#3366cc' },
+						geometry: { type: 'LineString', coordinates: segment.slice(0) }
+					});
+					segIndex = segIndex + 1;
+				}
+				segment = [];
+			}
+
+			if (mapData && mapData.length) {
+				for (var i = 0; i < mapData.length; i++) {
+					if (mapData[i] == null) {
+						flushSegment();
+						continue;
+					}
+					var lat = mapData[i][0];
+					var lon = mapData[i][1];
+					if (lat == null || lon == null) { continue; }
+					segment.push([lon, lat]);
+					trackPoints.push([lon, lat]);
+					bounds.extend([lon, lat]);
+					hasBounds = true;
+				}
+				flushSegment();
+			}
+
+			map.addSource('wpgpxmaps_track', {
+				type: 'geojson',
+				data: {
+					type: 'FeatureCollection',
+					features: features
+				}
+			});
+
+			map.addLayer({
+				id: 'wpgpxmaps_track_line',
+				type: 'line',
+				source: 'wpgpxmaps_track',
+				layout: {
+					'line-join': 'round',
+					'line-cap': 'round'
+				},
+				paint: {
+					'line-color': ['get', 'color'],
+					'line-width': 4,
+					'line-opacity': 0.7
+				}
+			});
+
+			if (hasBounds) {
+				map.fitBounds(bounds, { padding: 20, maxZoom: 15 });
+			}
+
+			if (trackPoints.length > 0) {
+				if (startIcon) {
+					add_icon_marker(map, trackPoints[0], startIcon, 'Start', null);
+				}
+				if (endIcon) {
+					add_icon_marker(map, trackPoints[trackPoints.length - 1], endIcon, 'End', null);
+				}
+
+				if (showExtremeMarkers) {
+					if (!isNaN(maxEleIndex) && maxEleIndex >= 0) {
+						var maxElePoint = get_track_point_by_map_index(maxEleIndex);
+						if (maxElePoint) {
+							var tipEleEle = (maxEleMarkerEle !== undefined && maxEleMarkerEle !== null && maxEleMarkerEle !== '') ? maxEleMarkerEle : (graphEle && graphEle.length > maxEleIndex ? graphEle[maxEleIndex] : '');
+							var tipEleSpeed = (maxEleMarkerSpeed !== undefined && maxEleMarkerSpeed !== null && maxEleMarkerSpeed !== '') ? maxEleMarkerSpeed : (graphSpeed && graphSpeed.length > maxEleIndex ? graphSpeed[maxEleIndex] : '');
+							add_icon_marker(
+								map,
+								maxElePoint,
+								null,
+								(lng.maxAltitude || 'Max altitude'),
+								'<div><b>' + (lng.maxAltitude || 'Max altitude') + '</b><br/>' + marker_ele_fmt(tipEleEle) + '<br/>' + marker_speed_fmt(tipEleSpeed) + '</div>'
+							);
+						}
+					}
+					if (!isNaN(maxSpeedIndex) && maxSpeedIndex >= 0) {
+						var maxSpeedPoint = get_track_point_by_map_index(maxSpeedIndex);
+						if (maxSpeedPoint) {
+							var tipSpeedEle = (maxSpeedMarkerEle !== undefined && maxSpeedMarkerEle !== null && maxSpeedMarkerEle !== '') ? maxSpeedMarkerEle : (graphEle && graphEle.length > maxSpeedIndex ? graphEle[maxSpeedIndex] : '');
+							var tipSpeedSpeed = (maxSpeedMarkerSpeed !== undefined && maxSpeedMarkerSpeed !== null && maxSpeedMarkerSpeed !== '') ? maxSpeedMarkerSpeed : (graphSpeed && graphSpeed.length > maxSpeedIndex ? graphSpeed[maxSpeedIndex] : '');
+							add_icon_marker(
+								map,
+								maxSpeedPoint,
+								null,
+								(lng.maxSpeed || 'Max speed'),
+								'<div><b>' + (lng.maxSpeed || 'Max speed') + '</b><br/>' + marker_ele_fmt(tipSpeedEle) + '<br/>' + marker_speed_fmt(tipSpeedSpeed) + '</div>'
+							);
+						}
+					}
+				}
+			}
+
+			if (waypoints && waypoints.length) {
+				for (var w = 0; w < waypoints.length; w++) {
+					var wp = waypoints[w];
+					if (!wp || wp.lat === undefined || wp.lon === undefined) { continue; }
+					add_icon_marker(
+						map,
+						[wp.lon, wp.lat],
+						wp.img || null,
+						wp.name || '',
+						popup_waypoint_html(wp.name || '', wp.desc || '', wp.lat, wp.lon)
+					);
+				}
+			}
+
+			jQuery('#ngimages_' + targetId).attr('style', 'display:block;position:absolute;left:-50000px');
+			var hasImagesInPost = jQuery('#ngimages_' + targetId + ' span').length > 0;
+			var imageTasks = [];
+			jQuery('#ngimages_' + targetId + ' span').each(function() {
+				var imageLat = jQuery(this).attr('lat');
+				var imageLon = jQuery(this).attr('lon');
+				var $container = jQuery(this);
+				var processed = false;
+				jQuery('img', this).each(function() {
+					var $im = jQuery(this);
+					var imageUrl = resolve_maplibre_image_url($im);
+					if (imageUrl) {
+						$im.attr('src', imageUrl);
+						imageTasks.push({ url: imageUrl, lat: imageLat, lon: imageLon });
+						processed = true;
+					}
+				});
+				if (!processed) {
+					var href = jQuery('a', $container).attr('href');
+					if (href) { imageTasks.push({ url: href, lat: imageLat, lon: imageLon }); }
+				}
+			});
+
+			function process_maplibre_image_tasks(maxConcurrent) {
+				var idx = 0;
+				var running = 0;
+				function next() {
+					while (running < maxConcurrent && idx < imageTasks.length) {
+						running = running + 1;
+						(function(task) {
+							var preload = new Image();
+							preload.onload = function() {
+								add_maplibre_ng_image_marker(map, task.url, task.lat, task.lon, ngImageMarkers);
+								running = running - 1;
+								next();
+							};
+							preload.onerror = function() {
+								running = running - 1;
+								next();
+							};
+							preload.src = task.url;
+						})(imageTasks[idx++]);
+					}
+					if (idx >= imageTasks.length && running === 0 && hasImagesInPost && ngImageMarkers.length && ngImagesControlBtn) {
+						ngImagesControlBtn.style.display = 'block';
+					}
+				}
+				if (imageTasks.length) { setTimeout(function() { next(); }, 0); }
+			}
+
+			process_maplibre_image_tasks(3);
+
+			if (currentIcon && trackPoints.length > 0) {
+				chartMarker = add_icon_marker(map, trackPoints[0], currentIcon, (lng.currentPosition || 'Current position'), null);
+				map.on('mousemove', 'wpgpxmaps_track_line', function(e) {
+					if (!e || !e.lngLat || !chartMarker) { return; }
+					chartMarker.setLngLat([e.lngLat.lng, e.lngLat.lat]);
+					if (hchart && mapData && mapData.length) {
+						var ci = getClosestIndex(mapData, e.lngLat.lat, e.lngLat.lng);
+						var cx = (ci >= 0 && graphDist && graphDist.length > ci) ? graphDist[ci] : null;
+						var items = [];
+						for (var si = 0; si < hchart.series.length; si++) {
+							var sdata = hchart.series[si].data;
+							if (!sdata || !sdata.length || cx === null || cx === undefined) { continue; }
+							for (var pj = 0; pj < sdata.length; pj++) {
+								if (sdata[pj] && sdata[pj].x == cx) {
+									items.push(sdata[pj]);
+									break;
+								}
+							}
+						}
+						if (items.length) {
+							hchart.tooltip.refresh(items);
+						}
+					}
+				});
+			}
+
+			if ((usegpsposition + '') === 'true' && navigator.geolocation) {
+				var gpsMarker = null;
+				navigator.geolocation.getCurrentPosition(function(position) {
+					var ll = [position.coords.longitude, position.coords.latitude];
+					gpsMarker = add_icon_marker(map, ll, currentpositioncon || null, 'you', null);
+				}, function() {}, { enableHighAccuracy: true });
+
+				navigator.geolocation.watchPosition(function(position) {
+					var ll = [position.coords.longitude, position.coords.latitude];
+					if (gpsMarker) {
+						gpsMarker.setLngLat(ll);
+					} else {
+						gpsMarker = add_icon_marker(map, ll, currentpositioncon || null, 'you', null);
+					}
+				}, function() {}, { enableHighAccuracy: true });
+			}
+
+			hchart = wpgpxmaps_maplibre_render_charts(chartMarker);
+
+			if (el_spinner) { el_spinner.style.display = 'none'; }
+		});
+
+		map.on('dragend', function() {
+			if (backToCenterBtn && hasBounds) {
+				backToCenterBtn.style.display = 'block';
+			}
+		});
+
+		map.on('zoomend', function() {
+			if (backToCenterBtn && hasBounds) {
+				backToCenterBtn.style.display = 'block';
+			}
+		});
+
+		map.on('error', function() {
+			if (el_spinner) { el_spinner.style.display = 'none'; }
+		});
+
+		var $_tab = jQuery(el).closest('.wordpress-post-tabs').eq(0);
+		if ($_tab) {
+			jQuery('div > ul > li > a', $_tab).click(function() {
+				setTimeout(function() {
+					map.resize();
+					if (hasBounds) {
+						map.fitBounds(bounds, { padding: 20, maxZoom: 15 });
+					}
+				}, 10);
+			});
+		}
+	}
  
     $.fn.wpgpxmaps = function( params ) {
+		var mapEngine = params.mapEngine || window.WPGPXMAPS_MAP_ENGINE || 'maplibre';
+		if (mapEngine !== 'google' && mapEngine !== 'maplibre') {
+			mapEngine = 'maplibre';
+		}
+		if (mapEngine === 'maplibre') {
+			this.each(function() {
+				wpgpxmaps_render_maplibre(params);
+			});
+			return this;
+		}
 
         // Ensure Google Maps API is loaded before initializing
         if (!(window.google && google.maps && google.maps.Map)) {
@@ -319,6 +1092,10 @@ Author URI: http://www.pedemontanadelgrappa.it/
 		
 		var hasThunderforestApiKey = (ThunderforestApiKey + '').length > 0;
 		var hasMaptilerApiKey = (MTApiKey + '').length > 0;
+		if (mapEngine !== 'google' && mapEngine !== 'maplibre') {
+			mapEngine = 'maplibre';
+		}
+		window.WPGPXMAPS_ACTIVE_ENGINE = mapEngine;
 
 		// Unit of measure settings
 		var l_s;
