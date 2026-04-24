@@ -774,7 +774,6 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 				
 				if ($showGrade == true) {
 					$points_graph_grade .= number_format ( isset($work_grade[$i]) ? $work_grade[$i] : 0 , 2 , '.' , '' ).',';
-					$points_map_grade .= number_format ( $work_grade[$i] , 2 , '.' , '' ).',';
 				}
 				// always collect map grade for coloring feature
 				$points_map_grade .= number_format ( isset($work_grade[$i]) ? $work_grade[$i] : 0 , 2 , '.' , '' ).',';
@@ -1074,8 +1073,8 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 					currentpositioncon : "'.esc_js($currentpositioncon).'",
 					usegpsposition : "'.esc_js($usegpsposition).'",
 					zoomOnScrollWheel : "'.esc_js($zoomOnScrollWheel).'", 
-					ngGalleries : ['.$ngGalleries.'],
-					ngImages : ['.$ngImages.'],
+					ngGalleries : ['.preg_replace('/[^0-9,]/', '', $ngGalleries).'],
+					ngImages : ['.preg_replace('/[^0-9,]/', '', $ngImages).'],
 					pluginUrl : "'.plugins_url().'",
 					elevColoringEnabled : '.(get_option('wpgpxmaps_elev_color_enabled') ? 'true' : 'false').',
 					elevColorThreshold : "'.esc_js(get_option('wpgpxmaps_elev_color_threshold', '5')).'",
@@ -1090,14 +1089,15 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 							  atemp             	: "'.__("Temperature", "wp-gpx-maps").'", 
 							  cadence               : "'.__("Cadence", "wp-gpx-maps").'",
 							  goFullScreen          : "'.__("Go Full Screen", "wp-gpx-maps").'",
-							  exitFullFcreen        : "'.__("Exit Full Screen", "wp-gpx-maps").'",
+							  exitFullScreen        : "'.__("Exit Full Screen", "wp-gpx-maps").'",
 							  hideImages            : "'.__("Hide Images", "wp-gpx-maps").'",
 							  showImages            : "'.__("Show Images", "wp-gpx-maps").'",
 							  backToCenter		    : "'.__("Back to center", "wp-gpx-maps").'",
 							  avgLabel              : "'.__("avg", "wp-gpx-maps").'",
 							  avgAltitude           : "'.__("Avg altitude", "wp-gpx-maps").'",
 							  maxAltitude           : "'.__("Max altitude", "wp-gpx-maps").'",
-							  maxSpeed              : "'.__("Max speed", "wp-gpx-maps").'"
+							  maxSpeed              : "'.__("Max speed", "wp-gpx-maps").'",
+							  locationDenied        : "'.__("Location permission denied or unavailable.", "wp-gpx-maps").'"
 						}
 				});
 					});

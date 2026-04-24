@@ -8,7 +8,7 @@ WordPress plugin that renders GPX tracks as interactive maps + charts via the `[
 - `wp-gpx-maps.php` — entry point; shortcode registration, asset enqueueing (`wpgpxmaps_detect_shortcodes`), activation hook
 - `wp-gpx-maps_utils.php` — GPX parsing (`simplexml_load_file` + `LIBXML_NONET`), coordinate/elevation helpers
 - `wp-gpx-maps_admin.php` / `wp-gpx-maps_admin_settings.php` / `wp-gpx-maps_admin_tracks.php` — admin UI
-- `WP-GPX-Maps.js` / `js/WP-GPX-Maps.js` — frontend map + chart rendering (ES5, jQuery IIFE)
+- `WP-GPX-Maps.js` — frontend map + chart rendering (ES5, jQuery IIFE)
 - `wp-gpx-maps_tileproxy.php` — proxied map tile cache (7-day expiry)
 
 **Data flow:** shortcode → PHP parses GPX → outputs JSON to JS → Google Maps renders track + Highcharts renders charts.

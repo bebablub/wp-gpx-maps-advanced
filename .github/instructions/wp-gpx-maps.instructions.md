@@ -51,4 +51,4 @@ WordPress plugin that displays GPX tracks on maps with interactive altitude/spee
 - `wp-gpx-maps_admin*.php` — admin UI (settings, tracks)
 - `wp-gpx-maps_utils*.php` — shared utilities
 - `wp-gpx-maps_tileproxy.php` — map tile proxy with caching
-- `WP-GPX-Maps.js` / `js/WP-GPX-Maps.js` — frontend map/chart logic
+- `WP-GPX-Maps.js` — frontend map/chart logic
