@@ -32,6 +32,8 @@ function wpgpxmaps_admin_notices(){
     if (!current_user_can('manage_options')) { return; }
     $is_plugin_page = isset($_GET['page']) && $_GET['page'] === 'WP-GPX-Maps';
     if (!$is_plugin_page) { return; }
+	$map_engine = get_option('wpgpxmaps_map_engine');
+	if ($map_engine !== 'google') { return; }
     $gm_key = get_option('wpgpxmaps_googlemapsv3_apikey');
     $map_id = get_option('wpgpxmaps_googlemaps_map_id');
     if (empty($gm_key)) {

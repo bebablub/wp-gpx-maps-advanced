@@ -718,7 +718,9 @@ Author URI: http://www.devfarm.it/
 				google.maps.event.addDomListener(controlUIcenter, 'click', function(event) {
 					map.setCenter(bounds.getCenter()); 
 					map.fitBounds(bounds);
-					controlDiv.removeChild(controlUIcenter);
+					if (controlUIcenter && controlUIcenter.parentNode) {
+						controlUIcenter.parentNode.removeChild(controlUIcenter);
+					}
 					controlUIcenter = null;
 					return false;			
 				});		
@@ -1215,6 +1217,10 @@ Author URI: http://www.devfarm.it/
 	
 	function addWayPoint(map, image, shadow, lat, lon, title, descr)
 	{
+		var esc = function(v){
+			v = (v === null || v === undefined) ? '' : ('' + v);
+			return v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;');
+		};
 		var p = new google.maps.LatLng(lat, lon);
 		var m = new google.maps.Marker({
 							  position: p,
@@ -1235,14 +1241,14 @@ Author URI: http://www.devfarm.it/
 			
 			if (title=='')
 			{
-				cnt = "<div>" + unescape(descr) + "</div>";
+				cnt = "<div>" + esc(descr) + "</div>";
 			}
 			else
 			{
-				cnt = "<div><b>" + title + "</b><br />" + unescape(descr) + "</div>";
+				cnt = "<div><b>" + esc(title) + "</b><br />" + esc(descr) + "</div>";
 			}
 			
-			cnt += "<br /><p><a href='https://maps.google.com?daddr=" + lat + "," + lon + "' target='_blank'>Itin&eacute;raire</a></p>";
+			cnt += "<br /><p><a href='https://maps.google.com?daddr=" + encodeURIComponent(lat + ',' + lon) + "' target='_blank' rel='noopener noreferrer'>Itin&eacute;raire</a></p>";
 			
 			infowindow = new google.maps.InfoWindow({ content: cnt});
 			infowindow.open(map,m);

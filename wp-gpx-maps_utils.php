@@ -667,10 +667,10 @@
 					$lon  = $wpt['lon'];
 					$ele  = (string) $wpt->ele;
 					$time = (string) $wpt->time;
-					$name = (string) $wpt->name;
-					$desc = (string) $wpt->desc;
-					$sym  = (string) $wpt->sym;
-					$type = (string) $wpt->type;
+					$name = sanitize_text_field((string) $wpt->name);
+					$desc = sanitize_text_field((string) $wpt->desc);
+					$sym  = sanitize_text_field((string) $wpt->sym);
+					$type = sanitize_text_field((string) $wpt->type);
 					$img  = '';
 					
 					$img_name = 'map-marker-' . $sym;

@@ -21,6 +21,7 @@ add_filter('plugin_action_links', 'WP_GPX_Maps_action_links', 10, 2);
 add_action('wp_print_styles', 'print_WP_GPX_Maps_styles' );
 add_action('wp_enqueue_scripts', 'enqueue_WP_GPX_Maps_scripts');
 add_action('plugins_loaded' ,'WP_GPX_Maps_lang_init');
+add_action('plugins_loaded', 'wpgpxmaps_upgrade_check');
 
 // Performance: only enqueue scripts on pages that actually contain the shortcode
 $GLOBALS['wpgpxmaps_should_enqueue'] = false;
@@ -41,22 +42,45 @@ function wpgpxmaps_detect_shortcodes($posts){
 // Resource hints to speed up third-party connections
 add_filter('wp_resource_hints', 'wpgpxmaps_resource_hints', 10, 2);
 function wpgpxmaps_resource_hints($hints, $relation_type) {
-    $hosts = array(
-        'https://maps.googleapis.com',
-        'https://maps.gstatic.com',
-        // Highcharts is now self-hosted in wp-gpx-maps/js/highcharts/
-        // 'https://code.highcharts.com' - removed for self-hosting
-        'https://tile.openstreetmap.org',
-        'https://a.tile.thunderforest.com',
-        'https://a.tile.opencyclemap.org',
-        'https://api.maptiler.com',
-    );
+	$engine = get_option('wpgpxmaps_map_engine');
+	if ($engine !== 'google' && $engine !== 'maplibre') {
+		$engine = 'maplibre';
+	}
+	$hosts = array(
+		'https://tile.openstreetmap.org',
+		'https://a.tile.thunderforest.com',
+		'https://a.tile.opencyclemap.org',
+		'https://api.maptiler.com',
+	);
+	if ($engine === 'google') {
+		$hosts[] = 'https://maps.googleapis.com';
+		$hosts[] = 'https://maps.gstatic.com';
+	}
     if ($relation_type === 'dns-prefetch') {
         foreach ($hosts as $h) { $hints[] = $h; }
     } elseif ($relation_type === 'preconnect') {
         foreach ($hosts as $h) { $hints[] = array('href' => $h, 'crossorigin' => true); }
     }
     return $hints;
+}
+
+function wpgpxmaps_upgrade_check() {
+	$plugin_version = '3.0.0';
+	$stored_version = get_option('wpgpxmaps_version');
+	$map_engine = get_option('wpgpxmaps_map_engine', false);
+
+	if ($map_engine !== 'google' && $map_engine !== 'maplibre') {
+		// Preserve existing user behavior on upgrades from legacy releases.
+		if ($stored_version === false || $stored_version === '' || version_compare($stored_version, '3.0.0', '<')) {
+			update_option('wpgpxmaps_map_engine', 'google');
+		} else {
+			update_option('wpgpxmaps_map_engine', 'maplibre');
+		}
+	}
+
+	if ($stored_version === false || $stored_version === '' || version_compare($stored_version, $plugin_version, '<')) {
+		update_option('wpgpxmaps_version', $plugin_version);
+	}
 }
 
 function WP_GPX_Maps_lang_init() {
@@ -834,29 +858,6 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content='')
 		
 		if ($showW == true) {
 			$wpoints = getWayPoints($gpx);
-			/*
-			foreach ($wpoints as $p) {
-				$rendered_point_index++;
-				$waypoints .= '['.number_format ( (float)$p[0] , 7 , '.' , '' ).','.number_format ( (float)$p[1] , 7 , '.' , '' ).',\''.unescape($p[4]).'\',\''.unescape($p[5]).'\',\''.unescape($p[7]).'\'],';
-
-				$raw_ele_for_marker = isset($work_ele[$i]) ? $work_ele[$i] : null;
-				if ($raw_ele_for_marker !== null && $raw_ele_for_marker !== false && is_numeric($raw_ele_for_marker)) {
-					$raw_ele_for_marker = (float)$raw_ele_for_marker;
-					if ($max_ele_index < 0 || $raw_ele_for_marker > $max_ele_value) {
-						$max_ele_value = $raw_ele_for_marker;
-						$max_ele_index = $rendered_point_index;
-					}
-				}
-
-				$raw_speed_for_marker = isset($work_speed[$i]) ? $work_speed[$i] : null;
-				if ($raw_speed_for_marker !== null && $raw_speed_for_marker !== false && is_numeric($raw_speed_for_marker)) {
-					$raw_speed_for_marker = (float)$raw_speed_for_marker;
-					if ($raw_speed_for_marker > 0 && ($max_speed_index < 0 || $raw_speed_for_marker > $max_speed_value)) {
-						$max_speed_value = $raw_speed_for_marker;
-						$max_speed_index = $rendered_point_index;
-					}
-				}
-			*/
 			$waypoints = json_encode($wpoints);
 		}
 
@@ -1243,13 +1244,6 @@ function downloadRemoteFile($remoteFile)
 	}
 }
 
-function unescape($value)
-{
-	$value = str_replace("'", "\'", $value);
-	$value = str_replace(array("\n","\r"), "", $value);
-	return $value;
-}
-
 function WP_GPX_Maps_install() {
 	add_option("wpgpxmaps_width", '100%', '', 'yes');
 	add_option("wpgpxmaps_graph_height", '200px', '', 'yes');
@@ -1296,6 +1290,7 @@ function WP_GPX_Maps_install() {
 	// MapTiler API key
 	add_option('wpgpxmaps_maptiler_apikey', '', '', 'yes');
 	add_option('wpgpxmaps_map_engine', 'maplibre', '', 'yes');
+	add_option('wpgpxmaps_version', '3.0.0', '', 'yes');
 	add_option('wpgpxmaps_summary_avg_ele', '', '', 'yes');
 	add_option('wpgpxmaps_privacymode', '', '', 'yes');
 }
@@ -1341,6 +1336,7 @@ function WP_GPX_Maps_remove() {
 	delete_option('wpgpxmaps_elev_color_max');
 	delete_option('wpgpxmaps_show_extreme_markers');
 	delete_option('wpgpxmaps_map_engine');
+	delete_option('wpgpxmaps_version');
 	delete_option('wpgpxmaps_summary_avg_ele');
 	delete_option('wpgpxmaps_privacymode');
 }

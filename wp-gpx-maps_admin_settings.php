@@ -140,13 +140,13 @@
 		<tr>			
 			<th scope="row">Google maps api key:</th>			
 			<td>				
-				<input name="wpgpxmaps_googlemapsv3_apikey" type="text" id="wpgpxmaps_googlemapsv3_apikey" value="<?php echo get_option('wpgpxmaps_googlemapsv3_apikey'); ?>" style="width:400px" /> <em> Go to the <a href="https://developers.google.com/maps/documentation/javascript/" target="_blank">Google API Console</a> and click &#8216;Get A Key&#8217; </em>			
+				<input name="wpgpxmaps_googlemapsv3_apikey" type="text" id="wpgpxmaps_googlemapsv3_apikey" value="<?php echo get_option('wpgpxmaps_googlemapsv3_apikey'); ?>" style="width:400px" /> <em>Only required when using Google Maps legacy fallback mode. Go to the <a href="https://developers.google.com/maps/documentation/javascript/" target="_blank">Google API Console</a> and click &#8216;Get A Key&#8217;.</em>			
 			</td>		
 		</tr>
 		<tr>
 			<th scope="row">Google Maps Map ID (for Advanced Markers):</th>
 			<td>
-				<input name="wpgpxmaps_googlemaps_map_id" type="text" id="wpgpxmaps_googlemaps_map_id" value="<?php echo get_option('wpgpxmaps_googlemaps_map_id'); ?>" style="width:400px" /> <em>Create a Map ID in <a href="https://developers.google.com/maps/documentation/javascript/cloud-setup#map-id" target="_blank">Google Cloud Console</a> and paste it here to enable Advanced Markers.</em>
+				<input name="wpgpxmaps_googlemaps_map_id" type="text" id="wpgpxmaps_googlemaps_map_id" value="<?php echo get_option('wpgpxmaps_googlemaps_map_id'); ?>" style="width:400px" /> <em>Only required when using Google Maps legacy fallback mode. Create a Map ID in <a href="https://developers.google.com/maps/documentation/javascript/cloud-setup#map-id" target="_blank">Google Cloud Console</a> and paste it here to enable Advanced Markers.</em>
 			</td>
 		</tr>
 	<tr>			
