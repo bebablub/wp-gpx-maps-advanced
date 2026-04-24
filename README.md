@@ -4,7 +4,7 @@
 **Tags:** maps, gpx, gps, graph, chart, google maps, track, garmin, image, nextgen-gallery, nextgen, exif, OpenStreetMap, OpenCycleMap, Hike&Bike, heart rate, heartrate, cadence
 **Requires at least:** 2.0.0
 **Tested up to:** 6.4
-**Stable tag:** 2.1.1
+**Stable tag:** 3.0.0
 
 Draws a GPX track with altitude graph. You can also display your NextGen Gallery images in the map.
 
@@ -141,7 +141,8 @@ Up to version 1.1.15, [Highcharts](http://www.highcharts.com/) is the only avail
 | `width` | Width in pixels | 100% |
 | `mheight` | Map height | 450px |
 | `gheight` | Graph height (set to 0 to hide) | 200px |
-| `mtype` | Map type: HYBRID, ROADMAP, SATELLITE, TERRAIN, OSM1 (Open Street Map), OSM2 (Open Cycle Map), OSM3 (Hike & Bike), OSM4 (Open Cycle Map - Transport), OSM5 (Open Cycle Map - Landscape), OSM6 (MapTiler - Outdoor), OSM7 (MapTiler - Topo), OSM8 (MapTiler - Landscape) | HYBRID |
+| `mapengine` | Map engine override: `maplibre` (default) or `google` (legacy fallback) | maplibre |
+| `mtype` | Map type: HYBRID, ROADMAP, SATELLITE, TERRAIN, OSM1 (Open Street Map), OSM2 (Open Cycle Map), OSM3 (Hike & Bike), OSM4 (Open Cycle Map - Transport), OSM5 (Open Cycle Map - Landscape), OSM6 (MapTiler - Outdoor), OSM7 (MapTiler - Topo), OSM8 (MapTiler - Landscape). In MapLibre mode, legacy Google map types are mapped to closest available raster layers. | HYBRID |
 | `waypoints` | Show GPX waypoints on the map | FALSE |
 | `donotreducegpx` | Print all points without reducing | FALSE |
 | `pointsoffset` | Skip points closer than XX meters | 10 |

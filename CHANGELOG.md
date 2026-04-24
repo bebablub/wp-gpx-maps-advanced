@@ -38,6 +38,7 @@ This release finalizes the map engine migration to MapLibre while keeping Google
 - Google Maps path remains available as legacy fallback
 - Existing shortcode/data output format remains compatible
 - Existing options continue to work
+- Legacy map types (`SATELLITE`, `TERRAIN`, `HYBRID`) now map to closest MapLibre layers (satellite/topo when MapTiler key is available)
 
 ---
 

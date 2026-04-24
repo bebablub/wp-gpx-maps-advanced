@@ -46,15 +46,20 @@ function wpgpxmaps_resource_hints($hints, $relation_type) {
 	if ($engine !== 'google' && $engine !== 'maplibre') {
 		$engine = 'maplibre';
 	}
-	$hosts = array(
-		'https://tile.openstreetmap.org',
-		'https://a.tile.thunderforest.com',
-		'https://a.tile.opencyclemap.org',
-		'https://api.maptiler.com',
-	);
+	$hosts = array();
 	if ($engine === 'google') {
 		$hosts[] = 'https://maps.googleapis.com';
 		$hosts[] = 'https://maps.gstatic.com';
+	} else {
+		$hosts[] = 'https://tile.openstreetmap.org';
+		$tf_key = get_option('wpgpxmaps_openstreetmap_apikey');
+		$mt_key = get_option('wpgpxmaps_maptiler_apikey');
+		if (!empty($tf_key)) {
+			$hosts[] = 'https://a.tile.thunderforest.com';
+		}
+		if (!empty($mt_key)) {
+			$hosts[] = 'https://api.maptiler.com';
+		}
 	}
     if ($relation_type === 'dns-prefetch') {
         foreach ($hosts as $h) { $hints[] = $h; }

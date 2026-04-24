@@ -136,6 +136,7 @@ function WP_GPX_Maps_html_page() {
 </li><li><b>width</b>: width in pixels
 </li><li><b>mheight</b>: map height
 </li><li><b>gheight</b>: graph height
+</li><li><b>mapengine</b>: map engine override: maplibre (default) or google (legacy fallback)
 </li><li><b>mtype</b>: map available types are: HYBRID, ROADMAP, SATELLITE, TERRAIN, OSM1 (Open Street Map), OSM2 (Open Cycle Map), OSM3 (Hike &amp; Bike), OSM4 (Open Cycle Map - Transport), OSM5 (Open Cycle Map - Landscape), OSM6 (MapTiler - Outdoor), OSM7 (MapTiler - Topo), OSM8 (MapTiler - Landscape)
 </li><li><b>waypoints</b>: print the gpx waypoints inside the map (default is FALSE)
 </li><li><b>donotreducegpx</b>: print all the point without reduce it (default is FALSE)

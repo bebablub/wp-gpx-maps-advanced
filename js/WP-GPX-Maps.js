@@ -284,6 +284,40 @@ Author URI: http://www.devfarm.it/
 
 			
 		var bounds = new google.maps.LatLngBounds();
+
+		function fitMapToBoundsSafe() {
+			if (!bounds || typeof bounds.getCenter !== 'function') { return; }
+			if (typeof bounds.isEmpty === 'function' && bounds.isEmpty()) { return; }
+			map.setCenter(bounds.getCenter());
+			map.fitBounds(bounds);
+		}
+
+		function google_notice(msg) {
+			if (!el_map || !msg) { return; }
+			var id = 'wpgpxmaps_google_notice_' + targetId;
+			var ex = document.getElementById(id);
+			var esc = function(v){
+				v = (v === null || v === undefined) ? '' : ('' + v);
+				return v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
+			};
+			if (ex) {
+				ex.innerHTML = esc(msg);
+				return;
+			}
+			var n = document.createElement('div');
+			n.id = id;
+			n.style.position = 'absolute';
+			n.style.left = '10px';
+			n.style.bottom = '20px';
+			n.style.zIndex = '6';
+			n.style.background = 'rgba(255,255,255,0.92)';
+			n.style.padding = '6px 8px';
+			n.style.fontSize = '12px';
+			n.style.border = '1px solid #ccc';
+			n.style.borderRadius = '3px';
+			n.innerHTML = esc(msg);
+			el_map.appendChild(n);
+		}
 		
 		var markerCurrentPosition = null;
 		
@@ -312,12 +346,12 @@ Author URI: http://www.devfarm.it/
 						markerCurrentPosition.setIcon(currentpositioncon);
 					}
 					bounds.extend(pos);
-					
-					map.setCenter(bounds.getCenter()); 
-					map.fitBounds(bounds);
+					fitMapToBoundsSafe();
 					
 					
-				}, function() {});
+				}, function() {
+					google_notice(lng.locationDenied || 'Location permission denied or unavailable.');
+				});
 				
 				navigator.geolocation.watchPosition(function(position){
 														// move current position marker
@@ -326,8 +360,8 @@ Author URI: http://www.devfarm.it/
 															markerCurrentPosition.setPosition(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));
 														}
 													}, 
-													function(e){
-														// some errors
+													function() {
+														google_notice(lng.locationDenied || 'Location updates unavailable.');
 													}, 
 													{
 													  enableHighAccuracy: false,
@@ -470,7 +504,7 @@ Author URI: http://www.devfarm.it/
 			controlUIhi.src = pluginUrl + "/wp-gpx-maps/img/hideImages.png";
 			controlUIhi.style.cursor = 'pointer';
 			controlUIhi.title = lng.hideImages;
-			controlDiv.appendChild(controlUIhi);
+			if (el_map) { el_map.appendChild(controlUIhi); }
 
 			// Setup the click event listeners
 			google.maps.event.addDomListener(controlUIhi, 'click', function(event) {
@@ -509,7 +543,7 @@ Author URI: http://www.devfarm.it/
 			var polylinenes = [];
 			var polyline_number=0;
 			var color=0;
-			for (i=0; i < mapData.length; i++) 
+			for (var i=0; i < mapData.length; i++) 
 			{	
 				if (mapData[i] == null)
 				{
@@ -637,7 +671,7 @@ Author URI: http://www.devfarm.it/
 				zIndex: 10
 			});
 			
-			for (i=0; i < polylinenes.length; i++) 
+			for (var i=0; i < polylinenes.length; i++) 
 			{	
 
 				google.maps.event.addListener(polylinenes[i],'mouseover',function(event){
@@ -652,9 +686,9 @@ Author URI: http://www.devfarm.it/
 							var ci = getClosestIndex(mapData,l1,l2);
 							var activeElements = [];
 							var seriesLen = myChart.data.datasets.length;												
-							for(var i=0; i<seriesLen;i++)
+							for (var si=0; si<seriesLen; si++)
 							{
-								activeElements.push(myChart.chart.getDatasetMeta(i).data[ci]);
+								activeElements.push(myChart.chart.getDatasetMeta(si).data[ci]);
 							}
 							if (activeElements.length > 0)
 							{
@@ -677,8 +711,7 @@ Author URI: http://www.devfarm.it/
 			}
 		}
 		
-		map.setCenter(bounds.getCenter()); 
-		map.fitBounds(bounds);
+		fitMapToBoundsSafe();
 		
 		// FIX post tabs	
 		var $_tab = $(el).closest(".wordpress-post-tabs").eq(0);	
@@ -687,8 +720,7 @@ Author URI: http://www.devfarm.it/
 			$("div > ul > li > a", $_tab).click(function(e){		
 				setTimeout(function(e){		
 					google.maps.event.trigger(map, 'resize');
-					//map.setCenter(bounds.getCenter());
-					map.fitBounds(bounds);
+					fitMapToBoundsSafe();
 					tabResized = true;
 				},10);
 			});
@@ -712,15 +744,12 @@ Author URI: http://www.devfarm.it/
 				controlUIcenter.src = pluginUrl + "/wp-gpx-maps/img/backToCenter.png";
 				controlUIcenter.style.cursor = 'pointer';
 				controlUIcenter.title = lng.backToCenter;
-				controlDiv.appendChild(controlUIcenter);
+				if (el_map) { el_map.appendChild(controlUIcenter); }
 
 				// Setup the click event listeners
 				google.maps.event.addDomListener(controlUIcenter, 'click', function(event) {
-					map.setCenter(bounds.getCenter()); 
-					map.fitBounds(bounds);
-					if (controlUIcenter && controlUIcenter.parentNode) {
-						controlUIcenter.parentNode.removeChild(controlUIcenter);
-					}
+					fitMapToBoundsSafe();
+					if (controlUIcenter && controlUIcenter.parentNode) { controlUIcenter.parentNode.removeChild(controlUIcenter); }
 					controlUIcenter = null;
 					return false;			
 				});		
@@ -1276,22 +1305,78 @@ Author URI: http://www.devfarm.it/
 	}
 
 
+	var wpgpxmapsClosestCache = { points: null, index: -1 };
 	function getClosestIndex(points,lat,lon)
 	{
-		var dd=10000;
-		var ii=0;
-		for (i=0; i < points.length; i++) 
+		var dd = 10000;
+		var ii = 0;
+		var n = points ? points.length : 0;
+		if (!n) { return 0; }
+
+		var stride = 1;
+		if (n > 8000) { stride = 8; }
+		else if (n > 4000) { stride = 4; }
+		else if (n > 2000) { stride = 2; }
+
+		var hint = -1;
+		if (wpgpxmapsClosestCache.points === points && wpgpxmapsClosestCache.index >= 0 && wpgpxmapsClosestCache.index < n) {
+			hint = wpgpxmapsClosestCache.index;
+		}
+
+		var from = -1;
+		var to = -1;
+		if (hint >= 0) {
+			var window = 64;
+			if (n > 12000) { window = 120; }
+			else if (n > 6000) { window = 96; }
+			from = hint - window;
+			if (from < 0) { from = 0; }
+			to = hint + window;
+			if (to >= n) { to = n - 1; }
+			for (var h = from; h <= to; h++) {
+				if (points[h] == null) { continue; }
+				var hd = dist(points[h][0], points[h][1], lat, lon);
+				if (hd < dd) {
+					ii = h;
+					dd = hd;
+				}
+			}
+			if (ii > from && ii < to) {
+				wpgpxmapsClosestCache.points = points;
+				wpgpxmapsClosestCache.index = ii;
+				return ii;
+			}
+		}
+
+		for (var i = 0; i < n; i += stride)
 		{
-			if (points[i]==null)
-				continue;
-		
+			if (points[i] == null) { continue; }
+			if (from >= 0 && i >= from && i <= to) { continue; }
 			var d = dist(points[i][0], points[i][1], lat, lon);
-			if ( d < dd )
+			if (d < dd)
 			{
 				ii = i;
 				dd = d;
 			}
 		}
+
+		var refineFrom = ii - (stride * 2);
+		if (refineFrom < 0) { refineFrom = 0; }
+		var refineTo = ii + (stride * 2);
+		if (refineTo >= n) { refineTo = n - 1; }
+		for (var j = refineFrom; j <= refineTo; j++)
+		{
+			if (points[j] == null) { continue; }
+			var d2 = dist(points[j][0], points[j][1], lat, lon);
+			if (d2 < dd)
+			{
+				ii = j;
+				dd = d2;
+			}
+		}
+
+		wpgpxmapsClosestCache.points = points;
+		wpgpxmapsClosestCache.index = ii;
 		return ii;
 	}
 
