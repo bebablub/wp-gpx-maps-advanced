@@ -14,8 +14,8 @@ Follow `.github/copilot-instructions.md`. Do not write code.
    - Scope and non-goals.
    - Files and functions to change or add, with approximate size.
    - Data flow (shortcode attribute or setting, PHP parsing, JSON output to JS, map/chart rendering).
-   - New shortcode attributes and settings with their defaults, and how they are read (`findValue()`).
-   - Backward compatibility: existing shortcodes, saved options and already published pages must behave unchanged; PHP 5.6, ES5 and WordPress 2.0.0+ constraints.
+   - New shortcode attributes and settings with their defaults, and how they are read (`wpgpxmaps_find_value()`).
+   - Backward compatibility: existing shortcodes, saved options and already published pages must behave unchanged; PHP 8.3, ES2017+ and WordPress 7.1+ constraints.
    - Security: nonces, capabilities, sanitizing, escaping, untrusted GPX/EXIF input, remote requests.
    - Performance on large tracks and with several shortcodes on one page; conditional asset loading.
    - Behaviour with missing data (no elevation, time, heart rate, images) and when a remote service or Google Maps feature is unavailable.

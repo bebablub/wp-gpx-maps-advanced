@@ -1,0 +1,72 @@
+.wpgpxmaps { clear: both; }
+.wpgpxmaps > div,
+.wpgpxmaps > div > div { max-width: 100%; }
+#content .wpgpxmaps img,
+.entry-content .wpgpxmaps img,
+.wpgpxmaps img { max-width: none; width: auto; padding: 0; background: none; margin: 0; border: none; }
+.wpgpxmaps .ngimages { display: none; }
+.wpgpxmaps .myngimages { border: 1px solid #fff; position: absolute; cursor: pointer; margin: 0; z-index: 1; }
+.wpgpxmaps .report { line-height: 120%; }
+
+.wpgpxmaps_summary { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 16px; align-items: start; border-top: 1px solid rgba(128, 128, 128, 0.35); margin-top: 8px; padding-top: 8px; }
+.wpgpxmaps_summary > span { min-width: 0; overflow-wrap: anywhere; }
+.wpgpxmaps_summary > span:nth-child(odd) { justify-self: start; text-align: left; }
+.wpgpxmaps_summary > span:nth-child(even) { justify-self: end; text-align: right; }
+.wpgpxmaps_summary .summaryvalue { font-weight: bold; }
+@media (max-width: 480px) {
+	.wpgpxmaps_summary { grid-template-columns: 1fr; }
+	.wpgpxmaps_summary > span:nth-child(even) { justify-self: start; text-align: left; }
+}
+
+.wpgpxmaps_error { padding: 8px 12px; border: 1px solid #d63638; background: #fcf0f1; color: #8a2424; }
+
+/* Google Maps type dropdown: wider menu, smaller font */
+.wpgpxmaps .gm-style-mtc { font-size: 12px !important; white-space: nowrap !important; min-width: 220px !important; }
+.wpgpxmaps .gm-style-mtc ul { min-width: 220px !important; }
+.wpgpxmaps .gm-style-mtc ul li { font-size: 12px !important; }
+.wpgpxmaps .gm-style-mtc ul li label { display: inline !important; font-size: 12px !important; margin-left: 3px !important; }
+
+.wpgpxmaps .wpgpxmaps_osm_footer {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	width: 100%;
+	height: 13px;
+	margin: 0;
+	z-index: 999;
+	background: #fff;
+	color: #333;
+	font-size: 12px;
+}
+.wpgpxmaps .wpgpxmaps_osm_footer span {
+	background: #fff;
+	color: #333;
+	padding: 0 6px 6px 6px;
+	vertical-align: baseline;
+	position: absolute;
+	bottom: 0;
+}
+
+/* Spinner overlay while the map initialises */
+.wpgpxmaps .wpgpxmaps_spinner {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(128, 128, 128, 0.25);
+	z-index: 1000;
+}
+.wpgpxmaps .wpgpxmaps_spinner .spinner {
+	width: 36px;
+	height: 36px;
+	border: 4px solid #bbb;
+	border-top-color: #3366cc;
+	border-radius: 50%;
+	animation: wpgpxmaps_spin 1s linear infinite;
+}
+@keyframes wpgpxmaps_spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+	.wpgpxmaps .wpgpxmaps_spinner .spinner { animation-duration: 3s; }
+}

@@ -1,155 +1,252 @@
 <?php
+/**
+ * Image helpers: NextGEN gallery images and post attachments, placed on the track via EXIF GPS data
+ * or by matching the photo time to the track time.
+ *
+ * @package WP-GPX-Maps
+ */
 
-	function isNGGalleryActive() {
-		if (!function_exists('is_plugin_active')) {
-			require_once(sitePath() . '/wp-admin/includes/plugin.php');
-		}
-		return is_plugin_active("nextgen-gallery/nggallery.php");
-	}
-	
-	function isNGGalleryProActive() {
-		if (!function_exists('is_plugin_active')) {
-			require_once(sitePath() . '/wp-admin/includes/plugin.php');
-		}
-		return is_plugin_active("nextgen-gallery-pro/nggallery-pro.php");
-	}
-	
+if (!defined('ABSPATH')) {
+    exit;
+}
 
-	function getNGGalleryImages($ngGalleries, $ngImages, $dt, $lat, $lon, $dtoffset, &$error)
-	{
-	
-		$result = array();
-		$galids = array_filter(array_map('intval', explode(',', $ngGalleries)));
-		$imgids = array_filter(array_map('intval', explode(',', $ngImages)));
-		
-		if (!isNGGalleryActive())
-			return '';
-		try {
+function wpgpxmaps_ngg_active(): bool
+{
+    if (!function_exists('is_plugin_active')) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    }
+    return is_plugin_active('nextgen-gallery/nggallery.php') && class_exists('nggdb');
+}
 
-			$pictures = array();
-			foreach ($galids as $g) {						
-				$pictures = array_merge($pictures, nggdb::get_gallery($g));
-			}
-			foreach ($imgids as $i) {
-				array_push($pictures, nggdb::find_image($i));
-			}
-			
-			foreach ($pictures as $p) {
-			
-				$item = array();
-				$item["data"] = $p->thumbHTML;
-				
-				if (is_callable('exif_read_data'))
-				{
-					$exif = @exif_read_data($p->imagePath);	
-					if ($exif !== false)
-					{
-						$item["lon"] = getExifGps($exif["GPSLongitude"], $exif['GPSLongitudeRef']);
-						$item["lat"] = getExifGps($exif["GPSLatitude"], $exif['GPSLatitudeRef']);
-						if (($item["lat"] != 0) || ($item["lon"] != 0)) 
-						{
-							$result[] = $item;
-						}
-						else if (isset($p->imagedate))
-						{
-							$_dt = strtotime($p->imagedate) + $dtoffset;
-							$_item = findItemCoordinate($_dt, $dt, $lat, $lon);
-							if ($_item != null)
-							{
-								$item["lat"] = $_item["lat"];
-								$item["lon"] = $_item["lon"];
-								$result[] = $item;
-							}
-						}
-					}
-				}
-				else
-				{
-					$error .= "Sorry, <a href='http://php.net/manual/en/function.exif-read-data.php' target='_blank' >exif_read_data</a> function not found! check your hosting..<br />";
-				}
-			}
-			
+/**
+ * Finds the track position for a timestamp. Returns array( 'lat' => float, 'lon' => float ) or null.
+ *
+ * @param int   $image_time Unix timestamp of the photo (already corrected by the offset).
+ * @param array $dt         Track timestamps (null at segment breaks).
+ * @param array $map        Track points array( lat, lon ) (null at segment breaks), same length as $dt.
+ */
+function wpgpxmaps_find_item_coordinate(int $image_time, array $dt, array $map): ?array
+{
+    $count = count($dt);
+    for ($i = 1; $i < $count; $i++) {
+        $previous = $dt[$i - 1];
+        $current = $dt[$i];
+        if (null === $previous || null === $current || empty($map[$i])) {
+            continue;
+        }
+        if ($image_time >= $previous && $image_time <= $current) {
+            return array(
+                'lat' => $map[$i][0],
+                'lon' => $map[$i][1],
+            );
+        }
+    }
+    return null;
+}
 
-/* START FIX NEXT GEN GALLERY 2.x */
+/**
+ * Converts an EXIF GPS coordinate (degrees, minutes, seconds as "a/b" fractions) to decimal degrees.
+ */
+function wpgpxmaps_exif_gps(mixed $coordinate, mixed $hemisphere): float
+{
+    if (!is_array($coordinate)) {
+        return 0.0;
+    }
+    $degrees = isset($coordinate[0]) ? wpgpxmaps_gps_fraction($coordinate[0]) : 0.0;
+    $minutes = isset($coordinate[1]) ? wpgpxmaps_gps_fraction($coordinate[1]) : 0.0;
+    $seconds = isset($coordinate[2]) ? wpgpxmaps_gps_fraction($coordinate[2]) : 0.0;
+    $flip = ('W' === $hemisphere || 'S' === $hemisphere) ? -1 : 1;
+    return $flip * ($degrees + $minutes / 60 + $seconds / 3600);
+}
 
-			if ( class_exists("C_Component_Registry") )
-			{
+function wpgpxmaps_gps_fraction(mixed $part): float
+{
+    $parts = explode('/', (string) $part);
+    if (1 === count($parts)) {
+        return (float) $parts[0];
+    }
+    $denominator = (float) $parts[1];
+    return 0.0 === $denominator ? (float) $parts[0] : (float) $parts[0] / $denominator;
+}
 
-				$renderer  = C_Component_Registry::get_instance()->get_utility('I_Displayed_Gallery_Renderer');
-				$inner_content = '';
-				$params['gallery_ids']     = $ngGalleries;
-				$params['image_ids']       = $ngImages;
-				$params['display_type']    = NEXTGEN_GALLERY_BASIC_THUMBNAILS;
-				$params['images_per_page'] = 999;
-				// also add js references to get the gallery working
-				$dummy = $renderer->display_images($params, $inner_content);
-					
-	/* START FIX NEXT GEN GALLERY PRO */	
+/**
+ * Reads the GPS position (lat, lon) and capture time from an image file's EXIF data.
+ *
+ * @return array{lat: float, lon: float, time: int}
+ */
+function wpgpxmaps_read_exif(string $file): array
+{
+    $result = array('lat' => 0.0, 'lon' => 0.0, 'time' => 0);
+    if (!is_callable('exif_read_data') || !is_readable($file)) {
+        return $result;
+    }
+    if (!in_array(strtolower(pathinfo($file, PATHINFO_EXTENSION)), array('jpg', 'jpeg'), true)) {
+        return $result;
+    }
+    try {
+        $exif = @exif_read_data($file); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+    } catch (Throwable $e) {
+        $exif = false;
+    }
+    if (!is_array($exif)) {
+        return $result;
+    }
+    if (isset($exif['GPSLongitude'], $exif['GPSLongitudeRef'], $exif['GPSLatitude'], $exif['GPSLatitudeRef'])) {
+        $result['lon'] = wpgpxmaps_exif_gps($exif['GPSLongitude'], $exif['GPSLongitudeRef']);
+        $result['lat'] = wpgpxmaps_exif_gps($exif['GPSLatitude'], $exif['GPSLatitudeRef']);
+    }
+    $taken = $exif['DateTimeOriginal'] ?? $exif['DateTime'] ?? '';
+    if (is_string($taken) && '' !== $taken) {
+        $timestamp = strtotime($taken);
+        $result['time'] = false === $timestamp ? 0 : $timestamp;
+    }
+    return $result;
+}
 
-				if (preg_match("/data-nplmodal-gallery-id=[\"'](.*?)[\"']/", $dummy, $m))
-				{
-					$galid = $m[1];
-					if ($galid)
-					{
-						for($i = 0; $i < count($result); ++$i) 
-						{
-							$result[$i]["data"] = str_replace("%PRO_LIGHTBOX_GALLERY_ID%", $galid, $result[$i]["data"]);
-						}
-					}
-				}
-	/* END FIX NEXT GEN GALLERY PRO */
-			}
+/**
+ * Images attached to a post, placed on the track.
+ *
+ * @return array<int, array{data: string, lat: float, lon: float}>
+ */
+function wpgpxmaps_get_attached_images(int $post_id, array $dt, array $map, int $dtoffset): array
+{
+    $result = array();
+    if ($post_id <= 0) {
+        return $result;
+    }
 
-/* END FIX NEXT GEN GALLERY 2.x */
-			
-		} catch (Exception $e) {
-			$error .= 'Error When Retrieving NextGen Gallery galleries/images: $e <br />';
-		}
+    try {
+        $attachments = get_children(
+            array(
+                'post_parent' => $post_id,
+                'post_type' => 'attachment',
+                'numberposts' => 200,
+                'post_status' => 'inherit',
+                'post_mime_type' => 'image',
+                'order' => 'ASC',
+                'orderby' => 'menu_order',
+            )
+        );
 
-		return $result;
-	}
-	
-	function findItemCoordinate($imgdt, $dt, $lat, $lon)
-	{
-		$keys = array_keys($dt);
-		$max = count($keys);
-		for ($k = 0; $k < $max; $k++)
-		{
-			$i = $keys[$k];
-			if ($i != 0 && isset($dt[$i-1]) && isset($dt[$i]))
-			{
-				if ($imgdt >= $dt[$i-1] && $imgdt <= $dt[$i])
-				{
-					if (isset($lat[$i], $lon[$i]) && $lat[$i] != 0 && $lon[$i] != 0)
-						return array( "lat" => $lat[$i], "lon" => $lon[$i] );
-				}
-			}
-		}
-		return null;
-	}
-	
-	function getExifGps($exifCoord, $hemi) 
-	{
-		$degrees = (is_array($exifCoord) && count($exifCoord) > 0) ? gps2Num($exifCoord[0]) : 0;
-		$minutes = (is_array($exifCoord) && count($exifCoord) > 1) ? gps2Num($exifCoord[1]) : 0;
-		$seconds = (is_array($exifCoord) && count($exifCoord) > 2) ? gps2Num($exifCoord[2]) : 0;
-		
-		$flip = ($hemi == 'W' or $hemi == 'S') ? -1 : 1;
-		return $flip * ($degrees + $minutes / 60 + $seconds / 3600);
-	}
+        foreach ($attachments as $attachment_id => $attachment) {
+            $link = wp_get_attachment_link((int) $attachment_id, array(105, 105));
+            if ('' === $link) {
+                continue;
+            }
 
-	function gps2Num($coordPart) 
-	{
-		$parts = explode('/', $coordPart);
-		if (count($parts) <= 0)
-			return 0;
-		if (count($parts) == 1)
-			return $parts[0];		
-		$lat = floatval($parts[0]);
-		$lon = floatval($parts[1]);
-		if ($lon == 0)
-			return $lat;
-		return $lat / $lon;
-	}
+            $exif = wpgpxmaps_read_exif((string) get_attached_file((int) $attachment_id));
+            if (0.0 !== $exif['lat'] || 0.0 !== $exif['lon']) {
+                $result[] = array(
+                    'data' => $link,
+                    'lat' => $exif['lat'],
+                    'lon' => $exif['lon'],
+                );
+                continue;
+            }
 
-?>
+            $time = $exif['time'];
+            if ($time <= 0) {
+                $meta = wp_get_attachment_metadata((int) $attachment_id);
+                $time = (int) ($meta['image_meta']['created_timestamp'] ?? 0);
+            }
+            if ($time <= 0 && !empty($attachment->post_date_gmt) && '0000-00-00 00:00:00' !== $attachment->post_date_gmt) {
+                $time = (int) strtotime($attachment->post_date_gmt . ' UTC');
+            }
+            if ($time <= 0) {
+                continue;
+            }
+
+            $position = wpgpxmaps_find_item_coordinate($time + $dtoffset, $dt, $map);
+            if (null !== $position) {
+                $result[] = array(
+                    'data' => $link,
+                    'lat' => $position['lat'],
+                    'lon' => $position['lon'],
+                );
+            }
+        }
+    } catch (Throwable $e) {
+        return $result;
+    }
+
+    return $result;
+}
+
+/**
+ * NextGEN Gallery images, placed on the track.
+ *
+ * @param string $galleries Comma separated gallery IDs.
+ * @param string $images    Comma separated image IDs.
+ * @return array<int, array{data: string, lat: float, lon: float}>
+ */
+function wpgpxmaps_get_nggallery_images(string $galleries, string $images, array $dt, array $map, int $dtoffset): array
+{
+    $result = array();
+    if (!wpgpxmaps_ngg_active()) {
+        return $result;
+    }
+
+    $gallery_ids = array_filter(array_map('intval', explode(',', $galleries)));
+    $image_ids = array_filter(array_map('intval', explode(',', $images)));
+
+    try {
+        $pictures = array();
+        foreach ($gallery_ids as $gallery_id) {
+            $pictures = array_merge($pictures, (array) nggdb::get_gallery($gallery_id));
+        }
+        foreach ($image_ids as $image_id) {
+            $pictures[] = nggdb::find_image($image_id);
+        }
+
+        foreach ($pictures as $picture) {
+            if (!is_object($picture) || empty($picture->thumbHTML)) {
+                continue;
+            }
+            $item = array(
+                'data' => str_replace("\n", '', (string) $picture->thumbHTML),
+                'lat' => 0.0,
+                'lon' => 0.0,
+            );
+
+            $exif = wpgpxmaps_read_exif((string) ($picture->imagePath ?? ''));
+            if (0.0 !== $exif['lat'] || 0.0 !== $exif['lon']) {
+                $item['lat'] = $exif['lat'];
+                $item['lon'] = $exif['lon'];
+                $result[] = $item;
+                continue;
+            }
+
+            $time = isset($picture->imagedate) ? (int) strtotime((string) $picture->imagedate) : 0;
+            if ($time > 0) {
+                $position = wpgpxmaps_find_item_coordinate($time + $dtoffset, $dt, $map);
+                if (null !== $position) {
+                    $item['lat'] = $position['lat'];
+                    $item['lon'] = $position['lon'];
+                    $result[] = $item;
+                }
+            }
+        }
+
+        // NextGEN Gallery 2.x / Pro: render once so the lightbox scripts and gallery id are available.
+        if ($result && class_exists('C_Component_Registry')) {
+            $renderer = C_Component_Registry::get_instance()->get_utility('I_Displayed_Gallery_Renderer');
+            $params = array(
+                'gallery_ids' => $galleries,
+                'image_ids' => $images,
+                'display_type' => defined('NEXTGEN_GALLERY_BASIC_THUMBNAILS') ? NEXTGEN_GALLERY_BASIC_THUMBNAILS : 'photocrati-nextgen_basic_thumbnails',
+                'images_per_page' => 999,
+            );
+            $inner = '';
+            $dummy = (string) $renderer->display_images($params, $inner);
+            if (preg_match('/data-nplmodal-gallery-id=["\'](.*?)["\']/', $dummy, $m) && '' !== $m[1]) {
+                foreach ($result as $index => $entry) {
+                    $result[$index]['data'] = str_replace('%PRO_LIGHTBOX_GALLERY_ID%', esc_attr($m[1]), $entry['data']);
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        return $result;
+    }
+
+    return $result;
+}

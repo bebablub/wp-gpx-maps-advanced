@@ -2,41 +2,52 @@
 
 ## Architecture
 
-WordPress plugin that renders GPX tracks as interactive maps + charts via the `[sgpx]` shortcode.
+WordPress plugin that renders GPX tracks as interactive maps + charts via the `[sgpx]` / `[sgpxf]` shortcodes.
 
 **Key files:**
-- `wp-gpx-maps.php` — entry point; shortcode registration, asset enqueueing (`wpgpxmaps_detect_shortcodes`), activation hook
-- `wp-gpx-maps_utils.php` — GPX parsing (`simplexml_load_file` + `LIBXML_NONET`), coordinate/elevation helpers
-- `wp-gpx-maps_admin.php` / `wp-gpx-maps_admin_settings.php` / `wp-gpx-maps_admin_tracks.php` — admin UI
-- `WP-GPX-Maps.js` / `js/WP-GPX-Maps.js` — frontend map + chart rendering (ES5, jQuery IIFE)
-- `wp-gpx-maps_tileproxy.php` — proxied map tile cache (7-day expiry)
 
-**Data flow:** shortcode → PHP parses GPX → outputs JSON to JS → Google Maps renders track + Highcharts renders charts.
+- `wp-gpx-maps.php` — entry point; constants, hooks, asset registration/enqueueing, install/upgrade
+- `wp-gpx-maps_settings.php` — settings schema, sanitizing, activation/upgrade
+- `wp-gpx-maps_shortcode.php` — `[sgpx]` / `[sgpxf]` handling, config array, HTML output
+- `wp-gpx-maps_utils.php` — GPX parsing (`XMLReader`), path resolution, remote fetch, cache, unit conversion
+- `wp-gpx-maps_utils_nggallery.php` — NextGEN gallery + EXIF/image-to-track matching helpers
+- `wp-gpx-maps_admin.php` / `wp-gpx-maps_admin_settings.php` / `wp-gpx-maps_admin_tracks.php` — admin UI (Settings API)
+- `WP-GPX-Maps.js` — frontend map + chart rendering (ES2017+, no jQuery, no build step)
+- `css/wp-gpx-maps.css` — frontend styles
+- `uninstall.php` — removes options and cache on plugin deletion
+- `tests/run.php` — CLI smoke tests (`php tests/run.php`)
+
+**Data flow:** shortcode → PHP parses GPX (cached as JSON) → config JSON in a `<script type="application/json">` block → JS loads Google Maps via `importLibrary` and renders the track; Highcharts renders charts.
+
+## Requirements
+
+PHP 8.3+, WordPress 7.1+. Latest stable Google Maps JS API (`quarterly` channel by default, configurable).
 
 ## Code Style
 
-**PHP:** Procedural only. No classes, namespaces, or OOP. Prefix functions with `wpgpxmaps_` or `handle_WP_GPX_Maps_`. PHP 5.6+ compatible (no nullable types, no void returns).
+**PHP:** Procedural only. No classes, namespaces, or OOP. Prefix functions with `wpgpxmaps_` or `handle_WP_GPX_Maps_`. Use PHP 8.3 features where useful (typed signatures, `str_contains`, `match`).
 
-**JS:** ES5 only — `var` only, no `let`/`const`, no arrow functions, no template literals. jQuery IIFE: `(function ($) { ... })(jQuery);`. Private members prefixed with `_`.
+**JS:** ES2017+ (`const`/`let`, arrow functions, template literals, `async`/`await`). Vanilla JS inside an IIFE with `'use strict'`; no jQuery dependency. Build DOM with `textContent`/`createElement`, never `innerHTML` with data from GPX files or settings.
 
 ## Build & Test
 
-No build tools. Source files served directly—edit and reload. No automated test suite.
+No build tools. Source files are served directly — edit and reload. Run `php tests/run.php` for the CLI smoke tests and `php -l` / `node --check` for syntax.
 
 ## Conventions
 
-- **Settings:** stored via `get_option()` / `update_option()` with `wpgpxmaps_` prefix. Read via `findValue()` which falls back to stored option.
-- **Assets:** only enqueued when shortcode is detected on the current page.
-- **Google Maps markers:** feature-detect `AdvancedMarkerElement`, fall back to classic `Marker`.
-- **Highcharts:** v11 primary; v3.0.10 legacy fallback; both self-hosted under `js/highcharts/`.
+- **Settings:** stored via `get_option()` / `update_option()` with `wpgpxmaps_` prefix; registered through the Settings API. Read via `wpgpxmaps_find_value()` (shortcode attribute → option → default).
+- **Assets:** registered early, enqueued only when a shortcode renders.
+- **Google Maps markers:** `AdvancedMarkerElement` when a Map ID is configured, classic `Marker` otherwise.
+- **Highcharts:** latest stable, self-hosted under `js/highcharts/`.
 - **Translations:** `__()` / `_e()` with text domain `wp-gpx-maps`.
 
 ## Security
 
-- Nonces for all form submissions (`wp_nonce_field` / `wp_verify_nonce`).
+- Nonces and capability checks for all form submissions.
 - Sanitize all input: `sanitize_text_field`, `sanitize_file_name`, `wp_unslash`.
 - SQL via `$wpdb->prepare()` — never concatenate user input.
-- GPX parsed with `LIBXML_NONET` to block external entity requests.
-- Tile proxy: validate URL scheme (http/https only), block private IP ranges (SSRF prevention).
-- Escape all output: `esc_html`, `esc_attr`, `esc_url`.
-- Never expose stack traces or internal paths.
+- GPX parsed with `XMLReader` (`LIBXML_NONET`, DOCTYPE rejected, size/point caps).
+- Local GPX paths must resolve (`realpath`) inside the uploads folder or `WP_CONTENT_DIR` and end in `.gpx`.
+- Remote GPX: `wp_safe_remote_get`, http/https only, private/reserved IP ranges blocked (SSRF), size limit.
+- Escape all output: `esc_html`, `esc_attr`, `esc_url`; emit JSON with `wp_json_encode` + `JSON_HEX_*` flags.
+- Never expose stack traces or internal paths. No `error_log()`.

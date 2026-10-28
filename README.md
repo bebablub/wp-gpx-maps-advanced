@@ -2,9 +2,9 @@
 
 **Contributors:** bastianonm, Stephan Klein, Michel Selerin, Benjamin Barinka
 **Tags:** maps, gpx, gps, graph, chart, google maps, track, garmin, image, nextgen-gallery, nextgen, exif, OpenStreetMap, OpenCycleMap, Hike&Bike, heart rate, heartrate, cadence
-**Requires at least:** 2.0.0
-**Tested up to:** 6.4
-**Stable tag:** 2.1.1
+**Requires at least:** 7.1
+**Requires PHP:** 8.3
+**Stable tag:** 3.0.0
 
 Draws a GPX track with altitude graph. You can also display your NextGen Gallery images in the map.
 
@@ -28,7 +28,15 @@ Based up on version 1.3.17 hosted at
 - Distance type selector: Normal (3D), Flat (horizontal only), or Climb (elevation only) for mountaineering reports
 - Spinner overlay while map initializes
 - Conditional asset loading (scripts only enqueued when shortcode is present)
-- DNS prefetch/preconnect resource hints for faster third-party connections
+- Several tracks on one page, in widgets and in block themes
+- No build step, no jQuery: vanilla ES2017 JavaScript
+
+### Requirements
+
+- PHP 8.3 or newer, WordPress 7.1 or newer
+- A Google Maps API key (Maps JavaScript API) for the Google map types. A Map ID is optional; with a Map ID the plugin uses Advanced Markers, otherwise classic markers.
+- Optional: Thunderforest API key (OSM2, OSM4, OSM5) and MapTiler API key (OSM6, OSM7, OSM8). Map types without a configured key fall back to OpenStreetMap.
+- The Google Maps release channel (`quarterly` by default, or `weekly`) can be changed in the settings.
 
 ### Supported Charts
 
@@ -49,25 +57,25 @@ Extended by Stephan Klein ([klein-gedruckt.de](https://klein-gedruckt.de/2015/03
 
 ### Translations (18 languages)
 
-| Language | Locale |
-|---|---|
-| Catalan | ca |
-| Dutch | nl_NL |
-| English | (default) |
-| French | fr_FR |
-| German | de_DE |
-| Hungarian | hu_HU |
-| Italian | it_IT |
-| Norwegian | nb_NO |
-| Polish | pl_PL |
-| Portuguese (Brazilian) | pt_BR |
-| Russian | ru_RU |
-| Spanish | es_ES |
-| Swedish | sv_SE |
-| Turkish | tr_TR |
-| Bulgarian | bg_BG |
-| Slovak | cs_CZ |
-| Japanese | ja_JP |
+| Language               | Locale    |
+| ---------------------- | --------- |
+| Catalan                | ca        |
+| Dutch                  | nl_NL     |
+| English                | (default) |
+| French                 | fr_FR     |
+| German                 | de_DE     |
+| Hungarian              | hu_HU     |
+| Italian                | it_IT     |
+| Norwegian              | nb_NO     |
+| Polish                 | pl_PL     |
+| Portuguese (Brazilian) | pt_BR     |
+| Russian                | ru_RU     |
+| Spanish                | es_ES     |
+| Swedish                | sv_SE     |
+| Turkish                | tr_TR     |
+| Bulgarian              | bg_BG     |
+| Slovak                 | cs_CZ     |
+| Japanese               | ja_JP     |
 
 Many thanks to all who helped with translations.
 
@@ -77,32 +85,13 @@ Many thanks to all who helped with translations.
 
 ## Self-Hosting Highcharts
 
-Since version 2.0.1, WP-GPX-Maps includes self-hosted Highcharts files to avoid rate limiting and improve loading performance.
-
-### Files Included
-
-The plugin bundles:
-- **Highcharts v11.x** (latest) - Used when "Highcharts v11" is enabled in settings
-- **Highcharts accessibility module** - Required for v11 to remove console warnings
-- **Highcharts v3.0.10** - Legacy fallback option
-
-### File Location
+WP-GPX-Maps bundles Highcharts 13.1.1 and its accessibility module, loaded from the plugin directory (no CDN):
 
 ```
 wp-gpx-maps/js/highcharts/
-  v11/
-    highcharts.js
-    modules/accessibility.js
-  v3.0.10/
-    highcharts.js
+  highcharts.js
+  modules/accessibility.js
 ```
-
-### How to Use
-
-1. **Default (v11):** Enable "Highcharts v11" in Settings > WP-GPX-Maps
-2. **Legacy mode:** Disable the toggle to use Highcharts v3.0.10
-
-No additional configuration needed -- files are automatically loaded from the plugin directory.
 
 ### License Note
 
@@ -119,7 +108,7 @@ Highcharts is free for non-commercial usage and development. For commercial webs
 
 Thanks to: [www.securcube.net](http://www.securcube.net/), [www.devfarm.it](http://www.devfarm.it/), [www.pedemontanadelgrappa.it](http://www.pedemontanadelgrappa.it/)
 
-Up to version 1.1.15, [Highcharts](http://www.highcharts.com/) is the only available rendering engine. Please respect their license and pricing (free for non-commercial usage only).
+[Highcharts](https://www.highcharts.com/) renders the charts. Please respect their license and pricing (free for non-commercial usage only).
 
 ---
 
@@ -135,61 +124,82 @@ Up to version 1.1.15, [Highcharts](http://www.highcharts.com/) is the only avail
 
 ### What are all available shortcode attributes?
 
-| Attribute | Description | Default |
-|---|---|---|
-| `gpx` | Relative path to GPX file | |
-| `width` | Width in pixels | 100% |
-| `mheight` | Map height | 450px |
-| `gheight` | Graph height (set to 0 to hide) | 200px |
-| `mtype` | Map type: HYBRID, ROADMAP, SATELLITE, TERRAIN, OSM1 (Open Street Map), OSM2 (Open Cycle Map), OSM3 (Hike & Bike), OSM4 (Open Cycle Map - Transport), OSM5 (Open Cycle Map - Landscape), OSM6 (MapTiler - Outdoor), OSM7 (MapTiler - Topo), OSM8 (MapTiler - Landscape) | HYBRID |
-| `waypoints` | Show GPX waypoints on the map | FALSE |
-| `donotreducegpx` | Print all points without reducing | FALSE |
-| `pointsoffset` | Skip points closer than XX meters | 10 |
-| `uom` | Unit of measure: 0=meters, 1=feet/miles, 2=meters/km, 3=meters/nautical miles, 4=meters/miles, 5=feet/nautical miles | 0 |
-| `mlinecolor` | Map line color | #3366cc |
-| `glinecolor` | Altitude line color | #3366cc |
-| `showele` | Show elevation data in chart | TRUE |
-| `showspeed` | Show speed in chart | FALSE |
-| `showhr` | Show heart rate in chart | FALSE |
-| `showcad` | Show cadence in chart | FALSE |
-| `showgrade` | Show grade in chart | FALSE |
-| `glinecolorspeed` | Speed line color | #ff0000 |
-| `glinecolorhr` | Heart rate line color | #ff77bd |
-| `glinecolorcad` | Cadence line color | #beecff |
-| `glinecolorgrade` | Grade line color | #beecff |
-| `uomspeed` | Speed unit: 0=m/s, 1=km/h, 2=miles/h, 3=min/km, 4=min/miles, 5=knots | 0 |
-| `chartFrom1` | Minimum value for altitude chart | (auto) |
-| `chartTo1` | Maximum value for altitude chart | (auto) |
-| `chartFrom2` | Minimum value for speed chart | (auto) |
-| `chartTo2` | Maximum value for speed chart | (auto) |
-| `arrowskm` | Direction arrows every N km (decimals allowed, e.g. `0.5`) | (disabled) |
-| `startIcon` | Start track icon URL | |
-| `endIcon` | End track icon URL | |
-| `currentIcon` | Current position icon (on mouse hover) | |
-| `waypointicon` | Waypoint custom icon URL | |
-| `nggalleries` | NextGen Gallery ID(s), comma-separated | |
-| `ngimages` | NextGen Image ID(s), comma-separated | |
-| `dtoffset` | Difference in seconds between GPX tool date and camera date | 0 |
-| `usegpsposition` | Show the visitor's real-time GPS position on the map via HTML5 Geolocation | FALSE |
-| `currentpositioncon` | Custom icon URL for the visitor's GPS position marker | (default pin) |
-| `distanceType` | Distance calculation: 0=Normal (3D), 1=Flat (horizontal only), 2=Climb (elevation only) | 0 |
-| `zoomonscrollwheel` | Zoom map with mouse scroll wheel | FALSE |
-| `download` | Allow users to download the GPX file | FALSE |
-| `skipcache` | Do not use cache (slower, not recommended) | FALSE |
-| `privacymode` | Remove points at the start and end of the track to hide the exact location | FALSE |
-| `summary` | Print summary details table | FALSE |
-| `summarytotlen` | Show total distance in summary | FALSE |
-| `summarymaxele` | Show max elevation in summary | FALSE |
-| `summaryminele` | Show min elevation in summary | FALSE |
-| `summaryeleup` | Show total climbing in summary | FALSE |
-| `summaryeledown` | Show total descent in summary | FALSE |
-| `summaryavgele` | Show average elevation in summary | FALSE |
-| `summaryavgspeed` | Show average speed in summary | FALSE |
-| `summarytotaltime` | Show total time in summary | FALSE |
+| Attribute            | Description                                                                                                                                                                                                                                        | Default       |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `gpx`                | Relative path to GPX file                                                                                                                                                                                                                          |               |
+| `width`              | Width in pixels                                                                                                                                                                                                                                    | 100%          |
+| `mheight`            | Map height                                                                                                                                                                                                                                         | 450px         |
+| `gheight`            | Graph height (set to 0 to hide)                                                                                                                                                                                                                    | 200px         |
+| `mtype`              | Map type: HYBRID, ROADMAP, SATELLITE, TERRAIN, OSM1 (Open Street Map), OSM2 (Open Cycle Map), OSM4 (Open Cycle Map - Transport), OSM5 (Open Cycle Map - Landscape), OSM6 (MapTiler - Outdoor), OSM7 (MapTiler - Topo), OSM8 (MapTiler - Landscape) | HYBRID        |
+| `waypoints`          | Show GPX waypoints on the map                                                                                                                                                                                                                      | FALSE         |
+| `donotreducegpx`     | Print all points without reducing (on by default after installation, see Settings)                                                                                                                                                                 | FALSE         |
+| `pointsoffset`       | Skip points closer than XX meters                                                                                                                                                                                                                  | 10            |
+| `uom`                | Unit of measure: 0=meters, 1=feet/miles, 2=meters/km, 3=meters/nautical miles, 4=meters/miles, 5=feet/nautical miles                                                                                                                               | 0             |
+| `mlinecolor`         | Map line color                                                                                                                                                                                                                                     | #3366cc       |
+| `glinecolor`         | Altitude line color                                                                                                                                                                                                                                | #3366cc       |
+| `showele`            | Show elevation data in chart                                                                                                                                                                                                                       | TRUE          |
+| `showspeed`          | Show speed in chart                                                                                                                                                                                                                                | FALSE         |
+| `showhr`             | Show heart rate in chart                                                                                                                                                                                                                           | FALSE         |
+| `showcad`            | Show cadence in chart                                                                                                                                                                                                                              | FALSE         |
+| `showatemp`          | Show temperature in chart                                                                                                                                                                                                                          | FALSE         |
+| `glinecoloratemp`    | Temperature line color                                                                                                                                                                                                                             | #ff77bd       |
+| `showextrememarkers` | Markers for max altitude and max speed                                                                                                                                                                                                             | TRUE          |
+| `attachments`        | Place images attached to the post along the track                                                                                                                                                                                                  | TRUE          |
+| `showgrade`          | Show grade in chart                                                                                                                                                                                                                                | FALSE         |
+| `glinecolorspeed`    | Speed line color                                                                                                                                                                                                                                   | #ff0000       |
+| `glinecolorhr`       | Heart rate line color                                                                                                                                                                                                                              | #ff77bd       |
+| `glinecolorcad`      | Cadence line color                                                                                                                                                                                                                                 | #beecff       |
+| `glinecolorgrade`    | Grade line color                                                                                                                                                                                                                                   | #beecff       |
+| `uomspeed`           | Speed unit: 0=m/s, 1=km/h, 2=miles/h, 3=min/km, 4=min/miles, 5=knots                                                                                                                                                                               | 0             |
+| `chartFrom1`         | Minimum value for altitude chart                                                                                                                                                                                                                   | (auto)        |
+| `chartTo1`           | Maximum value for altitude chart                                                                                                                                                                                                                   | (auto)        |
+| `chartFrom2`         | Minimum value for speed chart                                                                                                                                                                                                                      | (auto)        |
+| `chartTo2`           | Maximum value for speed chart                                                                                                                                                                                                                      | (auto)        |
+| `arrowskm`           | Direction arrows every N km (decimals allowed, e.g. `0.5`)                                                                                                                                                                                         | (disabled)    |
+| `startIcon`          | Start track icon URL                                                                                                                                                                                                                               |               |
+| `endIcon`            | End track icon URL                                                                                                                                                                                                                                 |               |
+| `currentIcon`        | Current position icon (on mouse hover)                                                                                                                                                                                                             |               |
+| `waypointicon`       | Waypoint custom icon URL                                                                                                                                                                                                                           |               |
+| `nggalleries`        | NextGen Gallery ID(s), comma-separated                                                                                                                                                                                                             |               |
+| `ngimages`           | NextGen Image ID(s), comma-separated                                                                                                                                                                                                               |               |
+| `dtoffset`           | Difference in seconds between GPX tool date and camera date                                                                                                                                                                                        | 0             |
+| `usegpsposition`     | Show the visitor's real-time GPS position on the map via HTML5 Geolocation                                                                                                                                                                         | FALSE         |
+| `currentpositioncon` | Custom icon URL for the visitor's GPS position marker                                                                                                                                                                                              | (default pin) |
+| `distanceType`       | Distance calculation: 0=Normal (3D), 1=Flat (horizontal only), 2=Climb (elevation only)                                                                                                                                                            | 0             |
+| `elevcolor`          | Colour steep sections of the track on the map                                                                                                                                                                                                      | FALSE         |
+| `elevcolorthreshold` | Grade (%) where the colouring starts                                                                                                                                                                                                               | 5             |
+| `elevcolormax`       | Grade (%) of the full highlight colour                                                                                                                                                                                                             | 12            |
+| `zoomonscrollwheel`  | Zoom map with mouse scroll wheel                                                                                                                                                                                                                   | FALSE         |
+| `download`           | Allow users to download the GPX file                                                                                                                                                                                                               | FALSE         |
+| `skipcache`          | Do not use cache (slower, not recommended)                                                                                                                                                                                                         | FALSE         |
+| `privacymode`        | Remove points at the start and end of the track to hide the exact location                                                                                                                                                                         | FALSE         |
+| `summary`            | Print summary details table                                                                                                                                                                                                                        | FALSE         |
+| `summarytotlen`      | Show total distance in summary                                                                                                                                                                                                                     | FALSE         |
+| `summarymaxele`      | Show max elevation in summary                                                                                                                                                                                                                      | FALSE         |
+| `summaryminele`      | Show min elevation in summary                                                                                                                                                                                                                      | FALSE         |
+| `summaryeleup`       | Show total climbing in summary                                                                                                                                                                                                                     | FALSE         |
+| `summaryeledown`     | Show total descent in summary                                                                                                                                                                                                                      | FALSE         |
+| `summaryavgele`      | Show average elevation in summary                                                                                                                                                                                                                  | FALSE         |
+| `summaryavgspeed`    | Show average speed in summary                                                                                                                                                                                                                      | FALSE         |
+| `summarytotaltime`   | Show total time in summary                                                                                                                                                                                                                         | FALSE         |
 
 ### What happens if I have a very large GPX?
 
-This plugin prints a reduced number of points to speed up JavaScript and page load.
+This plugin prints a reduced number of points to speed up JavaScript and page load. Files above 50 MB or with more than 100,000 points are rejected or truncated.
+
+### Which filters are available?
+
+| Filter                        | Purpose                                                       | Default                   |
+| ----------------------------- | ------------------------------------------------------------- | ------------------------- |
+| `wpgpxmaps_max_gpx_size`      | Maximum GPX size in bytes                                     | 50 MB                     |
+| `wpgpxmaps_max_points`        | Maximum number of parsed points                               | 100000                    |
+| `wpgpxmaps_allowed_gpx_roots` | Folders local GPX files may be read from                      | uploads, `WP_CONTENT_DIR` |
+| `wpgpxmaps_remote_cache_ttl`  | Cache lifetime of remote GPX files in seconds                 | 12 hours                  |
+| `wpgpxmaps_load_google_maps`  | Return `false` when another plugin or theme loads Google Maps | true                      |
+
+### Running the tests
+
+`php tests/run.php` runs the CLI smoke tests (no WordPress needed).
 
 ### Is it free?
 
@@ -210,6 +220,33 @@ Yes!
 
 ## Changelog
 
+### 3.0.0
+
+**Requirements:** PHP 8.3+, WordPress 7.1+. Older versions of the plugin keep working on older setups.
+
+**Changed:**
+
+- Frontend rewritten as vanilla ES2017 JavaScript (no jQuery); Google Maps loaded with the dynamic library loader (`importLibrary`) and the selected release channel.
+- Highcharts 13.1.1 replaces v11 and v3; the "Highcharts v11" setting is gone.
+- GPX parsing rewritten with `XMLReader` (no DOCTYPE, no network access, size and point limits); supports `trk`, `rte`, Garmin route points, segments and waypoints.
+- Settings are validated by one schema; admin pages rewritten on the Settings API with nonces and capability checks.
+- Shortcode attributes for elevation colouring are now `elevcolor`, `elevcolorthreshold` and `elevcolormax`.
+- `[sgpxf]` renders maps with the same options as `[sgpx]`.
+- Map type OSM3 (Hike & Bike) was removed (service discontinued); saved or shortcode values fall back to the default.
+- The chart is no longer hidden on mobile screens.
+- Deactivating the plugin keeps settings; deleting it removes options and cache.
+- The `$_GET` fallback for shortcode attributes was removed.
+
+**Fixed:**
+
+- Several undefined-variable, rounding and colour-conversion bugs in the frontend; info windows no longer build HTML from GPX data.
+- Remote GPX: redirects are validated, private/reserved addresses are blocked, response size is limited.
+- Local GPX: paths must resolve inside the allowed folders and end in `.gpx`.
+- Multi-segment tracks are drawn with gaps instead of connecting lines.
+- Pace is not computed for standing points.
+
+**Removed:** bootstrap-table, Chart.js, mColorPicker, Highcharts v3 and v11 copies.
+
 ### 2.1.1 (new)
 
 - Added optional markers for max speed and max elevation to map
@@ -223,6 +260,7 @@ Yes!
 ### 2.0.1 (new)
 
 **New features:**
+
 - Elevation coloring on the map for high slopes (grade-based polyline coloring from base color to red).
 - Direction arrows along track via `arrowskm` (every N km) with admin defaults (`wpgpxmaps_arrows_enabled`, `wpgpxmaps_arrows_km`).
 - Privacy mode via `privacymode` and admin default `wpgpxmaps_privacymode`, trimming approximately 5% of points from the track with a minimum of 100 and maximum of 500 total points removed.
@@ -233,6 +271,7 @@ Yes!
 - Hiding start and end position icons (leave URL empty).
 
 **Security/compatibility:**
+
 - Added nonces and verification for admin actions (upload/delete/clear cache).
 - Prepared SQL for waypoints; escaped output in admin and front-end.
 - SSRF hardening for remote GPX: http/https only, private IP ranges blocked, downloads via WordPress HTTP API, temp files via `wp_tempnam()`.
@@ -242,31 +281,37 @@ Yes!
 - PHP 8.x fixes: null/empty guards, reindex arrays after `unset`, division-by-zero protection, stricter numeric casts.
 
 **Google Maps:**
+
 - Async loader with retry guard to avoid "Map is not a constructor" timing errors.
 - Map ID support (Advanced Markers); automatic fallback to classic markers if unsupported.
 - Guarded `MapTypeControlStyle.DROPDOWN_MENU` usage; disabled Street View control icon.
 - Throttled polyline hover updates to reduce CPU; shortened readiness wait.
 
 **Highcharts:**
+
 - Optional Highcharts v11 (with `accessibility.js`) and legacy v3 fallback; v11 is default when unset.
 - Self-hosted Highcharts files in `js/highcharts/` to avoid CDN rate limiting.
 - Fixed selection callback for v11; improved y-axis label spacing to prevent overlaps.
 
 **Images (NextGen/attachments):**
+
 - More robust lazy-loading handling and URL resolution; fallback to `<a href>` when `<img>` missing.
 - Preloading and hover behavior refined to prevent flicker and pointer ping-pong.
 - Added EXIF fallback to attachment metadata timestamps when GPS coordinates are absent.
 
 **Providers/tiles:**
+
 - Switched all OSM/OCM tiles to HTTPS; footer credits shown for non-Google layers.
 
 **Admin:**
+
 - Settings: Map ID, Highcharts v11 toggle, default arrows settings.
 - Elevation highlight settings: enable/disable, grade threshold, max grade.
 - Notices on plugin pages for missing Google Maps API key / Map ID (non-blocking).
 - Upgraded admin `bootstrap-table` to 1.13.2 (scripts/styles loaded only on plugin pages).
 
 **Other:**
+
 - Folder shortcode processing aligned with main shortcode logic.
 - Download link fix for local files; remote URLs untouched.
 

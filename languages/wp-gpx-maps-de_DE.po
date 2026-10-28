@@ -1,241 +1,583 @@
 msgid ""
-
 msgstr ""
-
-"POT-Creation-Date: 2012-10-30 14:41+0100\n"
-
-"PO-Revision-Date: 2016-01-18 10:44+0100\n"
-
+"Project-Id-Version: WP GPX Maps 3.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-28 16:04+0100\n"
+"PO-Revision-Date: 2026-10-28 16:00+0100\n"
+"Last-Translator: Benjamin Barinka\n"
+"Language-Team: German\n"
+"Language: de_DE\n"
 "MIME-Version: 1.0\n"
-
 "Content-Type: text/plain; charset=UTF-8\n"
-
 "Content-Transfer-Encoding: 8bit\n"
-
 "X-Poedit-KeywordsList: __;_e\n"
-
 "X-Poedit-Basepath: .\n"
-
 "X-Poedit-SearchPath-0: ..\n"
 
-#: ../wp-gpx-maps.php:467
+msgid "Settings"
+msgstr "Einstellungen"
 
 msgid "Altitude"
-
 msgstr "Höhe"
 
-#: ../wp-gpx-maps.php:468
-
 msgid "Current Position"
-
 msgstr "Aktuelle Position"
 
-
-#: ../wp-gpx-maps.php:469
-
 msgid "Speed"
-
 msgstr "Geschwindigkeit"
 
-
-#: ../wp-gpx-maps.php:470
-
-msgid "Heart rate"
-
-msgstr "Herzfrequenz"
-
-
-#: ../wp-gpx-maps.php:471
-
-msgid "Cadence"
-
-msgstr "Trittfrequenz"
-
-
-
-#: ../wp-gpx-maps.php:472
-
-msgid "Go Full Screen"
-
-msgstr "Vollbildansicht"
-
-
-
-#: ../wp-gpx-maps.php:473
-
-msgid "Exit Full Screen"
-
-msgstr "Vollbildansicht beenden"
-
-
-
-#: ../wp-gpx-maps.php:474
-
-msgid "Hide Images"
-
-msgstr "Bilder ausblenden"
-
-
-
-#: ../wp-gpx-maps.php:475
-
-msgid "Show Images"
-
-msgstr "Bilder anzeigen"
-
-
-
-#: ../wp-gpx-maps.php:476
-
-msgid "Back to center"
-
-msgstr "Zurück zur Mitte"
-
-
-
-#: ../wp-gpx-maps.php:489
-
-msgid "Total distance"
-
-msgstr "Volle Distanz"
-
-
-
-#: ../wp-gpx-maps.php:494
-
-msgid "Max elevation"
-
-msgstr "Maximale Höhe"
-
-
-
-#: ../wp-gpx-maps.php:496
-
-msgid "Min elevation"
-
-msgstr "Minimale Höhe"
-
-
-
-#: ../wp-gpx-maps.php:498
-
-msgid "Total climbing"
-
-msgstr "Gesamtanstieg"
-
-
-
-#: ../wp-gpx-maps.php:500
-
-msgid "Total descent"
-
-msgstr "Gesamtabstieg"
-
-
-
-#: ../wp-gpx-maps.php:504
-
-msgid "Average speed"
-
-msgstr "∅ Bewegungsgeschwindigkeit"
-
-
-
-#: ../wp-gpx-maps.php:509
-
-msgid "Total Time"
-
-msgstr "Gesamtzeit"
-
-
-
-#: ../wp-gpx-maps.php:525
-
-msgid "Download"
-
-msgstr "Download"
-
-
-
-#: ../wp-gpx-maps_admin_settings.php:83 ../wp-gpx-maps_admin_settings.php:151
-
-#: ../wp-gpx-maps_admin_settings.php:229 ../wp-gpx-maps_admin_settings.php:333
-
-#: ../wp-gpx-maps_admin_settings.php:364
-
-msgid "Save Changes"
-
-msgstr "Änderungen speichern"
-
-
-
-#: ../wp-gpx-maps.php
-
 msgid "Grade"
-
 msgstr "Steigung"
 
-
-
-#: ../wp-gpx-maps.php
+msgid "Heart rate"
+msgstr "Herzfrequenz"
 
 msgid "Temperature"
-
 msgstr "Temperatur"
 
+msgid "Cadence"
+msgstr "Trittfrequenz"
 
+msgid "Hide Images"
+msgstr "Bilder ausblenden"
 
-#: ../wp-gpx-maps.php
+msgid "Show Images"
+msgstr "Bilder anzeigen"
+
+msgid "Back to center"
+msgstr "Zurück zur Mitte"
 
 msgid "avg"
-
 msgstr "Durchschn."
 
-
-
-#: ../wp-gpx-maps.php
-
 msgid "Avg altitude"
-
 msgstr "Durchschnittshöhe"
 
+msgid "Max altitude"
+msgstr "Höchster Punkt"
 
+msgid "Max speed"
+msgstr "Höchstgeschwindigkeit"
 
-#: ../wp-gpx-maps.php
+msgid "Zoom"
+msgstr "Zoom"
+
+msgid "Reset zoom"
+msgstr "Zoom zurücksetzen"
+
+msgid "Directions"
+msgstr "Route planen"
+
+msgid "The map could not be loaded."
+msgstr "Die Karte konnte nicht geladen werden."
+
+msgid ""
+"WP GPX Maps: no Google Maps API key is configured. Maps load with a "
+"development watermark until you set one in Settings."
+msgstr ""
+"WP GPX Maps: Es ist kein Google-Maps-API-Schlüssel hinterlegt. Karten werden "
+"mit einem Entwicklungs-Wasserzeichen geladen, bis Sie in den Einstellungen "
+"einen Schlüssel eintragen."
+
+msgid ""
+"WP GPX Maps: no Google Maps Map ID is configured. Advanced Markers require a "
+"Map ID; classic markers are used without one."
+msgstr ""
+"WP GPX Maps: Es ist keine Google-Maps-Map-ID hinterlegt. Erweiterte Marker "
+"benötigen eine Map-ID; ohne sie werden klassische Marker verwendet."
+
+msgid "Tracks"
+msgstr "Tracks"
+
+msgid "Help"
+msgstr "Hilfe"
+
+msgid "You do not have permission to access this page."
+msgstr "Sie haben keine Berechtigung, diese Seite aufzurufen."
+
+msgid "WP GPX Maps"
+msgstr "WP GPX Maps"
+
+msgid ""
+"The GPX folder could not be created. Create it and make it writable, or "
+"upload tracks manually."
+msgstr ""
+"Der GPX-Ordner konnte nicht angelegt werden. Legen Sie ihn an und machen Sie "
+"ihn beschreibbar, oder laden Sie Tracks manuell hoch."
+
+msgid ""
+"The cache folder could not be created. Tracks will not be cached and pages "
+"may be slower."
+msgstr ""
+"Der Cache-Ordner konnte nicht angelegt werden. Tracks werden nicht "
+"zwischengespeichert, Seiten können langsamer laden."
+
+msgid "The fastest way to use this plugin:"
+msgstr "So nutzen Sie das Plugin am schnellsten:"
+
+msgid ""
+"upload a file in the Tracks tab, then copy its shortcode into a post or page."
+msgstr ""
+"Laden Sie im Reiter „Tracks“ eine Datei hoch und kopieren Sie den Shortcode "
+"in einen Beitrag oder eine Seite."
+
+msgid "Relative path example:"
+msgstr "Beispiel mit relativem Pfad:"
+
+msgid "Remote file example:"
+msgstr "Beispiel mit externer Datei:"
+
+msgid "All GPX files of a folder:"
+msgstr "Alle GPX-Dateien eines Ordners:"
+
+msgid "Attributes"
+msgstr "Attribute"
+
+msgid "Normal (default)"
+msgstr "Normal (Standard)"
+
+msgid "Flat (ignore altitude)"
+msgstr "Flach (Höhe ignorieren)"
+
+msgid "Climb (only climb distance)"
+msgstr "Anstieg (nur Distanz im Anstieg)"
+
+msgid "Quarterly (stable, default)"
+msgstr "Quarterly (stabil, Standard)"
+
+msgid "Weekly (latest features)"
+msgstr "Weekly (neueste Funktionen)"
+
+msgid "Hybrid: street names on satellite images"
+msgstr "Hybrid: Straßennamen auf Satellitenbildern"
+
+msgid "Roadmap: normal street map"
+msgstr "Karte: normale Straßenkarte"
+
+msgid "Satellite: satellite images"
+msgstr "Satellit: Satellitenbilder"
+
+msgid "Terrain: physical features such as terrain and vegetation"
+msgstr "Gelände: Geländeformen und Vegetation"
+
+msgid "OpenStreetMap"
+msgstr "OpenStreetMap"
+
+msgid "Thunderforest Cycle (needs key)"
+msgstr "Thunderforest Cycle (Schlüssel erforderlich)"
+
+msgid "Thunderforest Transport (needs key)"
+msgstr "Thunderforest Transport (Schlüssel erforderlich)"
+
+msgid "Thunderforest Landscape (needs key)"
+msgstr "Thunderforest Landscape (Schlüssel erforderlich)"
+
+msgid "MapTiler Outdoor (needs key)"
+msgstr "MapTiler Outdoor (Schlüssel erforderlich)"
+
+msgid "MapTiler Topo (needs key)"
+msgstr "MapTiler Topo (Schlüssel erforderlich)"
+
+msgid "MapTiler Landscape (needs key)"
+msgstr "MapTiler Landscape (Schlüssel erforderlich)"
+
+msgid "meters/meters"
+msgstr "Meter/Meter"
+
+msgid "feet/miles"
+msgstr "Fuß/Meilen"
+
+msgid "meters/kilometers"
+msgstr "Meter/Kilometer"
+
+msgid "meters/nautical miles"
+msgstr "Meter/Seemeilen"
+
+msgid "meters/miles"
+msgstr "Meter/Meilen"
+
+msgid "feet/nautical miles"
+msgstr "Fuß/Seemeilen"
+
+msgid "Nautical Miles/Hour (Knots)"
+msgstr "Seemeilen/Stunde (Knoten)"
+
+msgid "General"
+msgstr "Allgemein"
+
+msgid "Width"
+msgstr "Breite"
+
+#, php-format
+msgid "CSS size, e.g. 100% or 600px."
+msgstr "CSS-Größe, z. B. 100 % oder 600px."
+
+msgid "Map height"
+msgstr "Kartenhöhe"
+
+msgid "Graph height"
+msgstr "Diagrammhöhe"
+
+msgid "Use 0 to hide the chart."
+msgstr "0 blendet das Diagramm aus."
+
+msgid "Distance type"
+msgstr "Distanzberechnung"
+
+msgid "Cache"
+msgstr "Cache"
+
+msgid "Do not use cache"
+msgstr "Cache nicht verwenden"
+
+msgid "Privacy mode"
+msgstr "Datenschutzmodus"
+
+msgid "Remove points at the start and end of the track to be more anonymous"
+msgstr "Punkte am Anfang und Ende des Tracks entfernen, um anonymer zu bleiben"
+
+msgid "Direction arrows"
+msgstr "Richtungspfeile"
+
+msgid "Draw direction arrows along the track when not set via shortcode"
+msgstr ""
+"Richtungspfeile entlang des Tracks zeichnen, wenn nicht per Shortcode "
+"festgelegt"
+
+msgid "Arrow spacing (km)"
+msgstr "Pfeilabstand (km)"
+
+msgid "GPX download"
+msgstr "GPX-Download"
+
+msgid "Allow users to download your GPX file"
+msgstr "Besuchern den Download der GPX-Datei erlauben"
+
+msgid "Use browser GPS position"
+msgstr "GPS-Position des Browsers verwenden"
+
+msgid "Show the visitor position on the map"
+msgstr "Position des Besuchers auf der Karte anzeigen"
+
+msgid "Map services"
+msgstr "Kartendienste"
+
+msgid "Google Maps API key"
+msgstr "Google-Maps-API-Schlüssel"
+
+msgid ""
+"Create a key in the Google Cloud Console (Maps JavaScript API) and restrict "
+"it to your domain."
+msgstr ""
+"Erstellen Sie in der Google Cloud Console einen Schlüssel (Maps JavaScript "
+"API) und beschränken Sie ihn auf Ihre Domain."
+
+msgid "Google Maps Map ID"
+msgstr "Google-Maps-Map-ID"
+
+msgid ""
+"Optional. Enables Advanced Markers; without a Map ID classic markers are "
+"used."
+msgstr ""
+"Optional. Aktiviert erweiterte Marker; ohne Map-ID werden klassische Marker "
+"verwendet."
+
+msgid "Google Maps release channel"
+msgstr "Google-Maps-Release-Kanal"
+
+msgid "Thunderforest API key"
+msgstr "Thunderforest-API-Schlüssel"
+
+msgid "Needed for the Thunderforest map types."
+msgstr "Erforderlich für die Thunderforest-Kartentypen."
+
+msgid "MapTiler API key"
+msgstr "MapTiler-API-Schlüssel"
+
+msgid "Needed for the MapTiler map types."
+msgstr "Erforderlich für die MapTiler-Kartentypen."
+
+msgid "Summary table"
+msgstr "Zusammenfassung"
+
+msgid "Print summary table"
+msgstr "Zusammenfassungstabelle anzeigen"
+
+msgid "Total distance"
+msgstr "Volle Distanz"
+
+msgid "Max elevation"
+msgstr "Maximale Höhe"
+
+msgid "Min elevation"
+msgstr "Minimale Höhe"
 
 msgid "Avg elevation"
-
 msgstr "Durchschnittliche Höhe"
 
+msgid "Total climbing"
+msgstr "Gesamtanstieg"
 
+msgid "Total descent"
+msgstr "Gesamtabstieg"
 
-#: ../wp-gpx-maps.php
+msgid "Average speed"
+msgstr "∅ Bewegungsgeschwindigkeit"
+
+msgid "Total time"
+msgstr "Gesamtzeit"
+
+msgid "Map"
+msgstr "Karte"
+
+msgid "On mouse scroll wheel"
+msgstr "Mit dem Mausrad"
+
+msgid "Zoom the map without holding Ctrl"
+msgstr "Karte zoomen, ohne Strg zu halten"
+
+msgid "Waypoints support"
+msgstr "Wegpunkte"
+
+msgid "Show waypoints"
+msgstr "Wegpunkte anzeigen"
+
+msgid "Map line color"
+msgstr "Linienfarbe auf der Karte"
+
+msgid "One or more colors separated by spaces."
+msgstr "Eine oder mehrere Farben, durch Leerzeichen getrennt."
+
+msgid "Default map type"
+msgstr "Standard-Kartentyp"
+
+msgid "Start icon"
+msgstr "Start-Symbol"
+
+msgid "URL of an image. Leave empty to hide."
+msgstr "URL eines Bildes. Leer lassen, um es auszublenden."
+
+msgid "End icon"
+msgstr "Ziel-Symbol"
+
+msgid "Current position icon"
+msgstr "Symbol für aktuelle Position"
+
+msgid "URL of an image. Leave empty for the default."
+msgstr "URL eines Bildes. Leer lassen für das Standard-Symbol."
+
+msgid "Current GPS position icon"
+msgstr "Symbol für aktuelle GPS-Position"
+
+msgid "Custom waypoint icon"
+msgstr "Eigenes Wegpunkt-Symbol"
+
+msgid "Max altitude/speed markers"
+msgstr "Marker für Höchstpunkt und Höchstgeschwindigkeit"
+
+msgid "Show markers with a hover tooltip"
+msgstr "Marker mit Tooltip beim Darüberfahren anzeigen"
+
+msgid "Elevation highlight"
+msgstr "Steigung hervorheben"
+
+msgid "Color the track red where the grade exceeds the threshold"
+msgstr "Track rot einfärben, wo die Steigung den Schwellwert überschreitet"
+
+msgid "Grade threshold (%)"
+msgstr "Steigungs-Schwellwert (%)"
+
+msgid "Max grade for full red (%)"
+msgstr "Steigung für volles Rot (%)"
+
+msgid "Chart"
+msgstr "Diagramm"
+
+msgid "Show altitude"
+msgstr "Höhe anzeigen"
+
+msgid "Altitude line color"
+msgstr "Linienfarbe Höhe"
+
+msgid "Unit of measure"
+msgstr "Maßeinheit"
+
+msgid "Altitude minimum"
+msgstr "Höhe Minimum"
+
+msgid "Leave empty for auto scale."
+msgstr "Leer lassen für automatische Skalierung."
+
+msgid "Altitude maximum"
+msgstr "Höhe Maximum"
+
+msgid "Show speed"
+msgstr "Geschwindigkeit anzeigen"
+
+msgid "Speed line color"
+msgstr "Linienfarbe Geschwindigkeit"
+
+msgid "Speed unit of measure"
+msgstr "Maßeinheit Geschwindigkeit"
+
+msgid "Speed minimum"
+msgstr "Geschwindigkeit Minimum"
+
+msgid "Speed maximum"
+msgstr "Geschwindigkeit Maximum"
+
+msgid "Show heart rate (where available)"
+msgstr "Herzfrequenz anzeigen (falls vorhanden)"
+
+msgid "Heart rate line color"
+msgstr "Linienfarbe Herzfrequenz"
+
+msgid "Show temperature (where available)"
+msgstr "Temperatur anzeigen (falls vorhanden)"
+
+msgid "Temperature line color"
+msgstr "Linienfarbe Temperatur"
+
+msgid "Show cadence (where available)"
+msgstr "Trittfrequenz anzeigen (falls vorhanden)"
+
+msgid "Cadence line color"
+msgstr "Linienfarbe Trittfrequenz"
+
+msgid "Show grade"
+msgstr "Steigung anzeigen"
+
+msgid ""
+"Grade values depend on your GPS accuracy and can be wrong with a poor signal."
+msgstr ""
+"Steigungswerte hängen von der GPS-Genauigkeit ab und können bei schlechtem "
+"Signal falsch sein."
+
+msgid "Grade line color"
+msgstr "Linienfarbe Steigung"
+
+msgid "Advanced options"
+msgstr "Erweiterte Optionen"
+
+msgid "Skip points closer than (meters)"
+msgstr "Punkte überspringen, die näher beieinander liegen als (Meter)"
+
+msgid "Do not reduce GPX"
+msgstr "GPX nicht reduzieren"
+
+msgid "Keep every point of long tracks (slower)."
+msgstr "Jeden Punkt langer Tracks behalten (langsamer)."
+
+#. translators: %s: file name
+#, php-format
+msgid "File %s has been deleted."
+msgstr "Datei %s wurde gelöscht."
+
+msgid "The file could not be deleted."
+msgstr "Die Datei konnte nicht gelöscht werden."
+
+msgid "The cache is now empty."
+msgstr "Der Cache ist jetzt leer."
+
+msgid "There was an error uploading the file, please try again."
+msgstr ""
+"Beim Hochladen der Datei ist ein Fehler aufgetreten. Bitte versuchen Sie es "
+"erneut."
+
+msgid "File not supported. Only .gpx files can be uploaded."
+msgstr ""
+"Datei nicht unterstützt. Es können nur .gpx-Dateien hochgeladen werden."
+
+msgid "The file is too big."
+msgstr "Die Datei ist zu groß."
+
+msgid "File not supported. The file is not a valid GPX file."
+msgstr "Datei nicht unterstützt. Die Datei ist keine gültige GPX-Datei."
+
+#. translators: %s: file name
+#, php-format
+msgid "File %s has been uploaded."
+msgstr "Datei %s wurde hochgeladen."
+
+msgid "Choose a file to upload:"
+msgstr "Datei zum Hochladen auswählen:"
+
+msgid "Upload"
+msgstr "Hochladen"
+
+msgid "Clear Cache"
+msgstr "Cache leeren"
+
+msgid "File"
+msgstr "Datei"
+
+msgid "Last modified"
+msgstr "Zuletzt geändert"
+
+msgid "File size"
+msgstr "Dateigröße"
+
+msgid "Shortcode"
+msgstr "Shortcode"
+
+msgid "No tracks uploaded yet."
+msgstr "Noch keine Tracks hochgeladen."
+
+msgid "Download"
+msgstr "Download"
+
+#. translators: %s: file name
+#, php-format
+msgid "Delete this file: %s?"
+msgstr "Diese Datei löschen: %s?"
+
+msgid "Delete"
+msgstr "Löschen"
+
+msgid "No GPX file specified."
+msgstr "Keine GPX-Datei angegeben."
+
+msgid "The GPX file was not found."
+msgstr "Die GPX-Datei wurde nicht gefunden."
+
+msgid "The GPX address is not allowed."
+msgstr "Die GPX-Adresse ist nicht erlaubt."
+
+msgid "The GPX file could not be downloaded."
+msgstr "Die GPX-Datei konnte nicht heruntergeladen werden."
+
+msgid "The GPX file contains no track data."
+msgstr "Die GPX-Datei enthält keine Track-Daten."
+
+msgid "The GPX file could not be read."
+msgstr "Die GPX-Datei konnte nicht gelesen werden."
+
+msgid "Total Time"
+msgstr "Gesamtzeit"
 
 msgid "Move ratio"
-
 msgstr "Bewegungsanteil"
 
-
-
-#: ../wp-gpx-maps.php
-
 msgid "Time climbing"
-
 msgstr "Zeit am Aufstieg"
 
-
-
-#: ../wp-gpx-maps.php
-
 msgid "Avg climbing speed"
-
 msgstr "Durchschnittliche Aufstiegsgeschwindigkeit"
 
+msgid "Loading map"
+msgstr "Karte wird geladen"
 
-
-#: ../wp-gpx-maps.php
+msgid "Track map"
+msgstr "Track-Karte"
 
 msgid "Download GPX"
-
 msgstr "GPX herunterladen"
 
+#~ msgid "Go Full Screen"
+#~ msgstr "Vollbildansicht"
+
+#~ msgid "Exit Full Screen"
+#~ msgstr "Vollbildansicht beenden"
+
+#~ msgid "Save Changes"
+#~ msgstr "Änderungen speichern"

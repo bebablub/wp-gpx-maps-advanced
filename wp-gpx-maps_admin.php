@@ -1,192 +1,187 @@
 <?php
+/**
+ * Admin page: menu, tabs and help.
+ *
+ * @package WP-GPX-Maps
+ */
 
-if ( is_admin() ){
-	add_action('admin_menu', 'wpgpxmaps_admin_menu');
-    // Enqueue admin assets on our pages
-    add_action('admin_enqueue_scripts','wpgpxmaps_admin_assets');
-    // Show admin notices
-    add_action('admin_notices','wpgpxmaps_admin_notices');
+if (!defined('ABSPATH')) {
+	exit;
 }
 
-function wpgpxmaps_admin_menu() {
-	if ( current_user_can('manage_options') ){
-		add_options_page('WP GPX Maps', 'WP GPX Maps', 'manage_options', 'WP-GPX-Maps', 'WP_GPX_Maps_html_page');
-	} 
-	else if ( current_user_can('publish_posts') ) {
-		add_menu_page('WP GPX Maps', 'WP GPX Maps', 'publish_posts', 'WP-GPX-Maps', 'WP_GPX_Maps_html_page');
+add_action('admin_menu', 'wpgpxmaps_admin_menu');
+add_action('admin_notices', 'wpgpxmaps_admin_notices');
+
+function wpgpxmaps_admin_menu(): void
+{
+	if (current_user_can('manage_options')) {
+		add_options_page('WP GPX Maps', 'WP GPX Maps', 'manage_options', 'WP-GPX-Maps', 'wpgpxmaps_admin_page');
+	} elseif (current_user_can('publish_posts')) {
+		add_menu_page('WP GPX Maps', 'WP GPX Maps', 'publish_posts', 'WP-GPX-Maps', 'wpgpxmaps_admin_page');
 	}
 }
 
-function wpgpxmaps_admin_assets($hook){
-    // Load only on our plugin pages
-    $is_plugin_page = isset($_GET['page']) && $_GET['page'] === 'WP-GPX-Maps';
-    if (!$is_plugin_page) { return; }
-    // bootstrap-table 1.13.2 (admin only)
-    wp_register_script( 'bootstrap-table', 'https://unpkg.com/bootstrap-table@1.13.2/dist/bootstrap-table.min.js', array('jquery'), '1.13.2', true );
-    wp_enqueue_script( 'bootstrap-table' );
-    wp_register_style( 'bootstrap-table', 'https://unpkg.com/bootstrap-table@1.13.2/dist/bootstrap-table.min.css', array(), '1.13.2' );
-    wp_enqueue_style( 'bootstrap-table' );
+function wpgpxmaps_is_plugin_screen(): bool
+{
+	return isset($_GET['page']) && 'WP-GPX-Maps' === sanitize_text_field(wp_unslash($_GET['page'])); // phpcs:ignore WordPress.Security.NonceVerification
 }
 
-function wpgpxmaps_admin_notices(){
-    if (!current_user_can('manage_options')) { return; }
-    $is_plugin_page = isset($_GET['page']) && $_GET['page'] === 'WP-GPX-Maps';
-    if (!$is_plugin_page) { return; }
-    $gm_key = get_option('wpgpxmaps_googlemapsv3_apikey');
-    $map_id = get_option('wpgpxmaps_googlemaps_map_id');
-    if (empty($gm_key)) {
-        echo '<div class="notice notice-warning"><p>WP GPX Maps: No Google Maps API Key configured. Set it in Settings to enable Google Maps and avoid console warnings.</p></div>';
-    }
-    if (empty($map_id)) {
-        echo '<div class="notice notice-info"><p>WP GPX Maps: No Google Maps Map ID configured. Advanced Markers and styled maps require a Map ID. This is optional.</p></div>';
-    }
-}
-
-function ilc_admin_tabs( $current  ) {
-
-	if (current_user_can('manage_options'))
-	{
-		$tabs = array( 'tracks' => 'Tracks', 'settings' => 'Settings', 'help' => "help" );	
+function wpgpxmaps_admin_notices(): void
+{
+	if (!current_user_can('manage_options') || !wpgpxmaps_is_plugin_screen()) {
+		return;
 	}
-	else if ( current_user_can('publish_posts') ) {
-		$tabs = array( 'tracks' => 'Tracks', 'help' => "help" );	
+	if ('' === (string) get_option('wpgpxmaps_googlemapsv3_apikey', '')) {
+		echo '<div class="notice notice-warning"><p>' . esc_html__('WP GPX Maps: no Google Maps API key is configured. Maps load with a development watermark until you set one in Settings.', 'wp-gpx-maps') . '</p></div>';
 	}
-
-    echo '<h2 class="nav-tab-wrapper">';
-    foreach( $tabs as $tab => $name ){
-        $class = ( $tab == $current ) ? ' nav-tab-active' : '';
-        echo "<a class='nav-tab$class' href='?page=WP-GPX-Maps&tab=$tab'>$name</a>";
-    }
-    echo '</h2>';
+	if ('' === (string) get_option('wpgpxmaps_googlemaps_map_id', '')) {
+		echo '<div class="notice notice-info"><p>' . esc_html__('WP GPX Maps: no Google Maps Map ID is configured. Advanced Markers require a Map ID; classic markers are used without one.', 'wp-gpx-maps') . '</p></div>';
+	}
 }
 
-function WP_GPX_Maps_html_page() {
-	$realGpxPath = gpxFolderPath();
-	$cacheGpxPath = gpxCacheFolderPath();
-	$relativeGpxPath = relativeGpxFolderPath();
-	$relativeGpxPath = str_replace("\\","/", $relativeGpxPath);
-	
-	$tab = $_GET['tab'];
-	
-	if ($tab == '')
+/**
+ * Tabs the current user may open (slug => label).
+ *
+ * @return array<string, string>
+ */
+function wpgpxmaps_admin_tabs(): array
+{
+	$tabs = array('tracks' => __('Tracks', 'wp-gpx-maps'));
+	if (current_user_can('manage_options')) {
+		$tabs['settings'] = __('Settings', 'wp-gpx-maps');
+	}
+	$tabs['help'] = __('Help', 'wp-gpx-maps');
+	return $tabs;
+}
+
+function wpgpxmaps_admin_page(): void
+{
+	if (!current_user_can('publish_posts') && !current_user_can('manage_options')) {
+		wp_die(esc_html__('You do not have permission to access this page.', 'wp-gpx-maps'));
+	}
+
+	$tabs = wpgpxmaps_admin_tabs();
+	$tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : 'tracks'; // phpcs:ignore WordPress.Security.NonceVerification
+	if (!isset($tabs[$tab])) {
 		$tab = 'tracks';
-	
-
-?>
-	<div id="icon-themes" class="icon32"><br></div>
-		<h2>WP GPX Settings</h2>	
-<?php
-
-	if(file_exists($realGpxPath) && is_dir($realGpxPath))
-	{
-		//dir exsist!
-	}
-	else
-	{
-		if (!@mkdir($realGpxPath,0755,true)) {
-			echo '<div class="error" style="padding:10px">
-					Can\'t create <b>'.$realGpxPath.'</b> folder. Please create it and make it writable!<br />
-					If not, you will must update the file manually!
-				  </div>';
-		}
-	}
-	
-	if(file_exists($cacheGpxPath) && is_dir($cacheGpxPath))
-	{
-		//dir exsist!
-	}
-	else
-	{
-		if (!@mkdir($cacheGpxPath,0755,true)) {
-			echo '<div class="error" style="padding:10px">
-					Can\'t create <b>'.$cacheGpxPath.'</b> folder. Please create it and make it writable!<br />
-					If not, cache will not created and your site could be slower!
-				  </div>';
-		}
 	}
 
-	ilc_admin_tabs($tab);	
-	
-	if ($tab == "tracks")
-	{
-		include 'wp-gpx-maps_admin_tracks.php';
+	$gpx_dir = wpgpxmaps_gpx_folder_path();
+
+	echo '<div class="wrap"><h1>' . esc_html__('WP GPX Maps', 'wp-gpx-maps') . '</h1>';
+
+	if ('' === $gpx_dir || (!is_dir($gpx_dir) && !wp_mkdir_p($gpx_dir))) {
+		echo '<div class="notice notice-error"><p>' . esc_html__('The GPX folder could not be created. Create it and make it writable, or upload tracks manually.', 'wp-gpx-maps') . '</p></div>';
 	}
-	else if ($tab == "settings")
-	{
-		include 'wp-gpx-maps_admin_settings.php';
-	}
-	else if ($tab == "help")
-	{
-?>
-
-	<div style="padding:10px;">
-		<b>The fastest way to use this plugin:</b><br /> upload the file using the uploader in the first tab, than copy the shortcode from the list and paste it in the pages/posts.
-		<p>You can manually set the relative path to your gpx: <b>[sgpx gpx="<?php echo $relativeGpxPath; ?>&lt gpx file name &gt"]</b>.</p>
-		<p>You can also use gpx from other sites: <b>[sgpx gpx="http://www.someone.com/somewhere/somefile.gpx"]</b></p>
-		<hr />
-		<p>
-			<i>Full set of attributes:</i> <b>[sgpx gpx="<?php echo $relativeGpxPath; ?>&lt gpx file name &gt" </b>
-													&nbsp;&nbsp;&nbsp;<em>&gt&gt read below all the optional attributes &lt&lt</em>&nbsp;&nbsp;&nbsp;
-											<b>]</b>
-
-			<ul>
-<li><b>gpx</b>: relative path to gpx
-</li><li><b>width</b>: width in pixels
-</li><li><b>mheight</b>: map height
-</li><li><b>gheight</b>: graph height
-</li><li><b>mtype</b>: map available types are: HYBRID, ROADMAP, SATELLITE, TERRAIN, OSM1 (Open Street Map), OSM2 (Open Cycle Map), OSM3 (Hike &amp; Bike), OSM4 (Open Cycle Map - Transport), OSM5 (Open Cycle Map - Landscape), OSM6 (MapTiler - Outdoor), OSM7 (MapTiler - Topo), OSM8 (MapTiler - Landscape)
-</li><li><b>waypoints</b>: print the gpx waypoints inside the map (default is FALSE)
-</li><li><b>donotreducegpx</b>: print all the point without reduce it (default is FALSE)
-</li><li><b>pointsoffset</b>: skip points closer than XX meters(default is 10)
-</li><li><b>uom</b>: distance/altitude possible unit of measure are: 0, 1, 2, 3, 4, 5 (0 = meters, 1 = feet/miles, 2 = meters/kilometers, 3 = meters/nautical miles, 4 = meters/miles, 5 = feet/nautical miles)
-</li><li><b>mlinecolor</b>: map line color (default is #3366cc)
-</li><li><b>glinecolor</b>: altitude line color (default is #3366cc)
-</li><li><b>showspeed</b>: show speed inside the chart (default is FALSE)
-</li><li><b>showhr</b>: show heart rate inside the chart (default is FALSE)
-</li><li><b>showele</b>: show elevation data inside the chart (default is TRUE)
-</li><li><b>showcad</b>: show cadence inside the chart (default is FALSE)
-</li><li><b>showgrade</b>: show grade inside the chart (default is FALSE)
-</li><li><b>glinecolorspeed</b>: speed line color (default is #ff0000)
-</li><li><b>glinecolorhr</b>: heart rate line color (default is #ff77bd)
-</li><li><b>glinecolorcad</b>: cadence line color (default is #beecff)
-</li><li><b>glinecolorgrade</b>: grade line color (default is #beecff)
-</li><li><b>uomspeed</b>: unit of measure for speed are: 0, 1, 2, 3, 4, 5 (0 = m/s, 1 = km/h, 2 = miles/h, 3 = min/km, 4 = min/miles, 5 = Nautical Miles/Hour (Knots), 6 = min/100 meters)
-</li><li><b>chartFrom1</b>: minimun value for altitude chart
-</li><li><b>chartTo1</b>: maxumin value for altitude chart
-</li><li><b>chartFrom2</b>: minimun value for speed chart
-</li><li><b>chartTo2</b>: maxumin value for speed chart
-</li><li><b>arrowskm</b>: draw direction arrows along the track every N kilometers (decimals allowed, e.g. 0.5)
-</li><li><b>startIcon</b>: Start track icon
-</li><li><b>endIcon</b>: End track icon
-</li><li><b>currentIcon</b>: Current position icon (when mouse hover)
-</li><li><b>waypointicon</b>: waypoint custom icon
-</li><li><b>nggalleries</b>: NextGen Gallery id or a list of Galleries id separated by a comma
-</li><li><b>ngimages</b>: NextGen Image id or a list of Images id separated by a comma
-</li><li><b>dtoffset</b>: the difference (in seconds) between your gpx tool date and your camera date
-</li><li><b>zoomonscrollwheel</b>: zoom on map when mouse scroll wheel
-</li><li><b>download</b>: Allow users to download your GPX file
-</li><li><b>skipcache</b>: Do not use cache. If TRUE might be very slow (default is FALSE)
-</li><li><b>privacymode</b>: Remove points at start and end of track to hide exact location (default is FALSE)
-</li><li><b>summary</b>: Print summary details of your GPX (default is FALSE)
-</li><li><b>summarytotlen</b>: Print Total distance in summary table (default is FALSE)
-</li><li><b>summarymaxele</b>: Print Max Elevation in summary table (default is FALSE)
-</li><li><b>summaryminele</b>: Print Min Elevation in summary table (default is FALSE)
-</li><li><b>summaryeleup</b>: Print Total climbing in summary table (default is FALSE)
-</li><li><b>summaryeledown</b>: Print Total descent in summary table (default is FALSE)
-</li><li><b>summaryavgele</b>: Print Avg elevation in summary table (default is FALSE)
-</li><li><b>summaryavgspeed</b>: Print Average Speed in summary table (default is FALSE)
-</li><li><b>summarytotaltime</b>: Print Total time in summary table (default is FALSE)  </li>
-			</ul>
-		
-			<p>
-				<a href="http://devfarm.it/forums/forum/wp-gpx-maps/">Bugs, problems, thanks and anything else here!</a>
-			</p>
-			
-		</p>
-	</div>
-
-<?php
+	if (!wpgpxmaps_ensure_cache_dir()) {
+		echo '<div class="notice notice-warning"><p>' . esc_html__('The cache folder could not be created. Tracks will not be cached and pages may be slower.', 'wp-gpx-maps') . '</p></div>';
 	}
 
+	echo '<h2 class="nav-tab-wrapper">';
+	foreach ($tabs as $slug => $label) {
+		$url = add_query_arg(array('page' => 'WP-GPX-Maps', 'tab' => $slug), admin_url(current_user_can('manage_options') ? 'options-general.php' : 'admin.php'));
+		printf(
+			'<a class="nav-tab%s" href="%s">%s</a>',
+			$slug === $tab ? ' nav-tab-active' : '',
+			esc_url($url),
+			esc_html($label)
+		);
+	}
+	echo '</h2>';
+
+	if ('tracks' === $tab) {
+		require_once WPGPXMAPS_DIR . 'wp-gpx-maps_admin_tracks.php';
+		wpgpxmaps_admin_tracks_tab($gpx_dir);
+	} elseif ('settings' === $tab && current_user_can('manage_options')) {
+		require_once WPGPXMAPS_DIR . 'wp-gpx-maps_admin_settings.php';
+		wpgpxmaps_admin_settings_tab();
+	} else {
+		wpgpxmaps_admin_help_tab($gpx_dir);
+	}
+
+	echo '</div>';
 }
-?>
+
+/**
+ * Shortcode attributes shown on the help tab (attribute => description).
+ *
+ * @return array<string, string>
+ */
+function wpgpxmaps_shortcode_attributes(): array
+{
+	return array(
+		'gpx' => 'Path to the GPX file relative to the site root, or a http(s) URL.',
+		'width' => 'Width of the map and the chart (CSS size, e.g. 100% or 600px).',
+		'mheight' => 'Map height.',
+		'gheight' => 'Chart height; 0 hides the chart.',
+		'mtype' => 'Map type: HYBRID, ROADMAP, SATELLITE, TERRAIN, OSM1 (OpenStreetMap), OSM2 (Thunderforest Cycle), OSM4 (Thunderforest Transport), OSM5 (Thunderforest Landscape), OSM6 (MapTiler Outdoor), OSM7 (MapTiler Topo), OSM8 (MapTiler Landscape). OSM2/4/5 need a Thunderforest key and OSM6-8 a MapTiler key.',
+		'waypoints' => 'Show the GPX waypoints on the map (default false).',
+		'donotreducegpx' => 'Keep every point instead of reducing long tracks (set in Settings; on after a fresh install).',
+		'pointsoffset' => 'Skip points closer than N meters (default 10).',
+		'distancetype' => '0 = normal, 1 = flat (ignore altitude), 2 = climb only.',
+		'uom' => 'Distance and altitude unit: 0 = m/m, 1 = ft/mi, 2 = m/km, 3 = m/NM, 4 = m/mi, 5 = ft/NM.',
+		'uomspeed' => 'Speed unit: 0 = m/s, 1 = km/h, 2 = mi/h, 3 = min/km, 4 = min/mi, 5 = knots, 6 = min/100m.',
+		'mlinecolor' => 'Map line color, or several colors separated by spaces (one per track segment).',
+		'glinecolor' => 'Altitude line color (default #3366cc).',
+		'glinecolorspeed' => 'Speed line color (default #ff0000).',
+		'glinecolorhr' => 'Heart rate line color (default #ff77bd).',
+		'glinecoloratemp' => 'Temperature line color (default #ff77bd).',
+		'glinecolorcad' => 'Cadence line color (default #beecff).',
+		'glinecolorgrade' => 'Grade line color (default #beecff).',
+		'showele' => 'Show altitude in the chart (default true).',
+		'showspeed' => 'Show speed in the chart (default false).',
+		'showhr' => 'Show heart rate in the chart (default false).',
+		'showatemp' => 'Show temperature in the chart (default false).',
+		'showcad' => 'Show cadence in the chart (default false).',
+		'showgrade' => 'Show grade in the chart (default false).',
+		'chartfrom1' => 'Minimum value of the altitude axis.',
+		'chartto1' => 'Maximum value of the altitude axis.',
+		'chartfrom2' => 'Minimum value of the speed axis.',
+		'chartto2' => 'Maximum value of the speed axis.',
+		'arrowskm' => 'Draw direction arrows along the track every N kilometers (decimals allowed).',
+		'elevcolor' => 'Color the track red where the grade is steep (default false).',
+		'elevcolorthreshold' => 'Grade in % where the red coloring starts (default 5).',
+		'elevcolormax' => 'Grade in % for full red (default 12).',
+		'showextrememarkers' => 'Show markers for the highest point and the top speed (default true).',
+		'starticon' => 'URL of the start marker image.',
+		'endicon' => 'URL of the end marker image.',
+		'currenticon' => 'URL of the marker that follows the mouse over the chart.',
+		'waypointicon' => 'URL of the default waypoint image.',
+		'currentpositioncon' => 'URL of the marker image for the visitor GPS position.',
+		'attachments' => 'Show images attached to the post along the track (default true).',
+		'nggalleries' => 'NextGEN gallery id(s), comma separated.',
+		'ngimages' => 'NextGEN image id(s), comma separated.',
+		'dtoffset' => 'Seconds between the GPX clock and the camera clock.',
+		'zoomonscrollwheel' => 'Zoom the map with the mouse wheel without Ctrl (default false).',
+		'usegpsposition' => 'Show the visitor position from the browser GPS (default false).',
+		'download' => 'Show a link to download the GPX file (default false).',
+		'skipcache' => 'Do not use the cache; slow for big files (default false).',
+		'privacymode' => 'Cut the start and end of the track to hide exact locations (default false).',
+		'summary' => 'Print a summary table (default false).',
+		'summarytotlen' => 'Summary: total distance.',
+		'summarymaxele' => 'Summary: maximum elevation.',
+		'summaryminele' => 'Summary: minimum elevation.',
+		'summaryavgele' => 'Summary: average elevation.',
+		'summaryeleup' => 'Summary: total climbing.',
+		'summaryeledown' => 'Summary: total descent.',
+		'summaryavgspeed' => 'Summary: average speed.',
+		'summarytotaltime' => 'Summary: total time.',
+	);
+}
+
+function wpgpxmaps_admin_help_tab(string $gpx_dir): void
+{
+	$relative = wpgpxmaps_relative_path($gpx_dir);
+
+	echo '<div style="padding:10px;max-width:960px">';
+	echo '<p><b>' . esc_html__('The fastest way to use this plugin:', 'wp-gpx-maps') . '</b> ';
+	echo esc_html__('upload a file in the Tracks tab, then copy its shortcode into a post or page.', 'wp-gpx-maps') . '</p>';
+	echo '<p>' . esc_html__('Relative path example:', 'wp-gpx-maps') . ' <code>' . esc_html('[sgpx gpx="' . $relative . 'track.gpx"]') . '</code></p>';
+	echo '<p>' . esc_html__('Remote file example:', 'wp-gpx-maps') . ' <code>[sgpx gpx="https://example.com/track.gpx"]</code></p>';
+	echo '<p>' . esc_html__('All GPX files of a folder:', 'wp-gpx-maps') . ' <code>' . esc_html('[sgpxf folder="' . rtrim($relative, '/') . '"]') . '</code></p>';
+	echo '<hr /><h3>' . esc_html__('Attributes', 'wp-gpx-maps') . '</h3><ul style="list-style:disc;margin-left:20px">';
+	foreach (wpgpxmaps_shortcode_attributes() as $name => $description) {
+		echo '<li><b>' . esc_html($name) . '</b>: ' . esc_html($description) . '</li>';
+	}
+	echo '</ul></div>';
+}
