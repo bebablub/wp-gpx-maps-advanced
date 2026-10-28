@@ -1,0 +1,139 @@
+name: Check and release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: xmlreader, dom, mbstring
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: PHP syntax
+        run: |
+          find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l > /dev/null
+
+      - name: JavaScript syntax
+        run: node --check WP-GPX-Maps.js
+
+      - name: Forbidden patterns
+        run: |
+          if grep -n 'error_log(' ./*.php; then
+            echo '::error::error_log() is not allowed'
+            exit 1
+          fi
+
+      - name: Smoke tests
+        run: php tests/run.php
+
+      - name: Version consistency
+        run: |
+          header=$(sed -nE 's/^ \* Version:[[:space:]]*(.+)$/\1/p' wp-gpx-maps.php | head -n1 | tr -d '\r')
+          const=$(sed -nE "s/^define\('WPGPXMAPS_VERSION', '([^']+)'\);.*/\1/p" wp-gpx-maps.php | head -n1)
+          stable=$(sed -nE 's/^\*\*Stable tag:\*\*[[:space:]]*(.+)$/\1/p' README.md | head -n1 | tr -d '\r')
+          echo "header=$header constant=$const readme=$stable"
+          if ! [[ "$header" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Plugin header version '$header' is not MAJOR.MINOR.PATCH"
+            exit 1
+          fi
+          if [ "$header" != "$const" ] || [ "$header" != "$stable" ]; then
+            echo '::error::Version mismatch between plugin header, WPGPXMAPS_VERSION and README Stable tag'
+            exit 1
+          fi
+          if ! grep -qxF "### $header" README.md; then
+            echo "::error::README.md has no '### $header' changelog entry"
+            exit 1
+          fi
+
+  release:
+    name: Tag and release
+    needs: check
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SLUG: wp-gpx-maps
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read plugin version
+        id: version
+        run: |
+          version=$(sed -nE 's/^ \* Version:[[:space:]]*(.+)$/\1/p' wp-gpx-maps.php | head -n1 | tr -d '\r')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/$version" > /dev/null; then
+            echo "Tag $version already exists, nothing to release."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build package
+        if: steps.version.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir -p "dist/$SLUG"
+          git ls-files \
+            | grep -v -E '^(\.github/|tests/|screenshot-[0-9]+\.jpg$)' \
+            | rsync -a --files-from=- . "dist/$SLUG/"
+          (cd dist && zip -qr "$SLUG-$VERSION.zip" "$SLUG")
+          (cd dist && sha256sum "$SLUG-$VERSION.zip" > "$SLUG-$VERSION.zip.sha256")
+          unzip -l "dist/$SLUG-$VERSION.zip"
+
+      - name: Extract release notes
+        if: steps.version.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          awk -v v="### $VERSION" '
+            $0 == "## Changelog" { in_log = 1; next }
+            in_log && $0 == v { found = 1; next }
+            found && /^### / { exit }
+            found { print }
+          ' README.md > dist/notes.md
+          if ! grep -q '[^[:space:]]' dist/notes.md; then
+            echo "Release $VERSION" > dist/notes.md
+          fi
+
+      - name: Create tag and release
+        if: steps.version.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "$VERSION" \
+            "dist/$SLUG-$VERSION.zip" \
+            "dist/$SLUG-$VERSION.zip.sha256" \
+            --target "$GITHUB_SHA" \
+            --title "$VERSION" \
+            --notes-file dist/notes.md
