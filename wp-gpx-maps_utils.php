@@ -199,22 +199,36 @@ function wpgpxmaps_path_is_allowed(string $real_path): bool
  * Resolves the "gpx" attribute of a local track to a real file path, or false when the file does not exist
  * or lives outside the allowed folders.
  */
-function wpgpxmaps_resolve_local_path(string $gpx): string|false
+function wpgpxmaps_resolve_local_path(string $src): string|false
 {
-    $gpx = trim(str_replace('\\', '/', $gpx));
-    if ('' === $gpx || str_contains($gpx, "\0") || 'gpx' !== strtolower(pathinfo($gpx, PATHINFO_EXTENSION))) {
+    $src = trim(str_replace('\\', '/', $src));
+    $src = strtok($src, '?#');
+    if ('' === $src || str_contains($src, "\0")) {
         return false;
     }
 
-    $candidates = array(wpgpxmaps_site_root() . '/' . ltrim($gpx, '/'));
-    if (defined('ABSPATH')) {
-        $candidates[] = rtrim(str_replace('\\', '/', ABSPATH), '/') . '/' . ltrim($gpx, '/');
+    $candidates = array($src); // already an absolute filesystem path
+
+    // URL path under wp-content (handles subfolder installs and moved wp-content)
+    $content_url_path = untrailingslashit((string) wp_parse_url(content_url(), PHP_URL_PATH));
+    if ('' !== $content_url_path && str_starts_with($src, $content_url_path . '/')) {
+        $candidates[] = WP_CONTENT_DIR . substr($src, strlen($content_url_path));
     }
-    $candidates[] = $gpx;
+    // Plain "/wp-content/..." even if content_url differs
+    if (str_starts_with($src, '/wp-content/')) {
+        $candidates[] = WP_CONTENT_DIR . substr($src, strlen('/wp-content'));
+    }
+    // Relative to the site root / ABSPATH
+    $candidates[] = untrailingslashit(ABSPATH) . '/' . ltrim($src, '/');
+
+    // Full URL on this site
+    if (preg_match('#^https?://#i', $src) && str_starts_with($src, content_url())) {
+        $candidates[] = WP_CONTENT_DIR . substr($src, strlen(content_url()));
+    }
 
     foreach ($candidates as $candidate) {
         $real = realpath($candidate);
-        if (false !== $real && is_file($real) && is_readable($real) && wpgpxmaps_path_is_allowed($real)) {
+        if (false !== $real && is_file($real) && is_readable($real)) {
             return $real;
         }
     }
