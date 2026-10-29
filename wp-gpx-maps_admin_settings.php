@@ -201,7 +201,8 @@ function wpgpxmaps_render_setting_field(string $option, string $label, string $h
 			echo '<input type="text" id="' . $id . '" name="' . $name . '" value="' . esc_attr($value) . '" class="small-text" />';
 			break;
 		case 'url':
-			echo '<input type="url" id="' . $id . '" name="' . $name . '" value="' . esc_attr($value) . '" class="regular-text" />';
+			// Plain text input: relative URLs such as /bike-marker.png are valid and must not be blocked by the browser.
+			echo '<input type="text" inputmode="url" id="' . $id . '" name="' . $name . '" value="' . esc_attr($value) . '" class="regular-text" autocomplete="off" />';
 			break;
 		default:
 			echo '<input type="text" id="' . $id . '" name="' . $name . '" value="' . esc_attr($value) . '" class="regular-text" autocomplete="off" />';

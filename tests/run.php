@@ -52,9 +52,17 @@ function get_option(string $name, $default = false)
 {
     return $GLOBALS['wpgpxmaps_test_options'][$name] ?? $default;
 }
+function register_setting(string $group, string $option, array $args = array()): void
+{
+    $GLOBALS['wpgpxmaps_test_registered'][$option] = $args;
+}
 function wp_upload_dir($time = null, $create = true): array
 {
     return array('basedir' => WP_CONTENT_DIR . '/uploads', 'baseurl' => 'http://example.test/wp-content/uploads');
+}
+function untrailingslashit(string $value): string
+{
+    return rtrim($value, '/\\');
 }
 function content_url(): string
 {
@@ -64,9 +72,9 @@ function wp_json_encode($value, int $flags = 0)
 {
     return json_encode($value, $flags);
 }
-function wp_parse_url(string $url)
+function wp_parse_url(string $url, int $component = -1)
 {
-    return parse_url($url);
+    return parse_url($url, $component);
 }
 function wp_mkdir_p(string $dir): bool
 {
@@ -294,6 +302,13 @@ check('setting number clamps', '10000' === wpgpxmaps_sanitize_setting('99999', '
 check('setting url rejects javascript', '' === wpgpxmaps_sanitize_setting('javascript:alert(1)', 'wpgpxmaps_map_start_icon'));
 check('setting unknown option', '' === wpgpxmaps_sanitize_setting('x', 'unknown_option'));
 check('setting key is stripped of tags', 'abc' === wpgpxmaps_sanitize_setting('<b>abc</b>', 'wpgpxmaps_googlemapsv3_apikey'));
+
+// WordPress calls the registered sanitize callback with the value only; the option name must already be bound.
+wpgpxmaps_register_settings();
+$registered = $GLOBALS['wpgpxmaps_test_registered'] ?? array();
+check('settings registered', count($registered) === count(wpgpxmaps_settings_schema()));
+check('registered callback keeps enum value', 'SATELLITE' === ($registered['wpgpxmaps_map_type']['sanitize_callback'])('SATELLITE'));
+check('registered callback keeps color', '#ff0000' === ($registered['wpgpxmaps_graph_line_color_hr']['sanitize_callback'])('#ff0000'));
 
 $GLOBALS['wpgpxmaps_test_options'] = array('wpgpxmaps_privacymode' => '', 'wpgpxmaps_show_elevation' => '');
 $opts = wpgpxmaps_shortcode_options(array('privacymode' => 'true', 'showele' => 'false', 'mtype' => 'osm1', 'mheight' => '300'));

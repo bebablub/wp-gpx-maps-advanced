@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: WP GPX Maps 3.0.0\n"
+"Project-Id-Version: WP GPX Maps 3.0.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-10-28 16:04+0100\n"
 "PO-Revision-Date: 2026-10-28 16:00+0100\n"
@@ -50,8 +50,11 @@ msgstr "Zurück zur Mitte"
 msgid "avg"
 msgstr "Durchschn."
 
-msgid "Avg altitude"
-msgstr "Durchschnittshöhe"
+msgid "Start"
+msgstr "Start"
+
+msgid "End"
+msgstr "Ziel"
 
 msgid "Max altitude"
 msgstr "Höchster Punkt"
@@ -572,6 +575,9 @@ msgstr "Track-Karte"
 
 msgid "Download GPX"
 msgstr "GPX herunterladen"
+
+#~ msgid "Avg altitude"
+#~ msgstr "Durchschnittshöhe"
 
 #~ msgid "Go Full Screen"
 #~ msgstr "Vollbildansicht"

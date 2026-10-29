@@ -318,11 +318,6 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content = '', $tag = ''): string
         }
     }
 
-    $arrow_repeat = '';
-    if ($o['arrows_km'] > 0 && $track['stats']['totalLength'] > 0) {
-        $arrow_repeat = round(max(0.1, min(100.0, $o['arrows_km'] * 1000 / $track['stats']['totalLength'] * 100)), 2) . '%';
-    }
-
     $extremes = array();
     if ($o['extreme']) {
         $ele_index = (int) $track['extremes']['maxEleIndex'];
@@ -387,7 +382,7 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content = '', $tag = ''): string
         ),
         'extremes' => $extremes,
         'waypoints' => $waypoints,
-        'arrowRepeat' => $arrow_repeat,
+        'arrowKm' => $o['arrows_km'],
         'scrollWheel' => $o['zoomwheel'],
         'usePosition' => $o['gps'],
         'hasImages' => (bool) $images,

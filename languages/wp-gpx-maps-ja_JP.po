@@ -52,7 +52,10 @@ msgstr "中心に戻る"
 msgid "avg"
 msgstr ""
 
-msgid "Avg altitude"
+msgid "Start"
+msgstr ""
+
+msgid "End"
 msgstr ""
 
 msgid "Max altitude"

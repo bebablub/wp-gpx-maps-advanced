@@ -3,7 +3,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: WP GPX Maps 3.0.0\n"
+"Project-Id-Version: WP GPX Maps 3.0.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-10-28 16:04+0100\n"
 "PO-Revision-Date: \n"
@@ -50,7 +50,10 @@ msgstr ""
 msgid "avg"
 msgstr ""
 
-msgid "Avg altitude"
+msgid "Start"
+msgstr ""
+
+msgid "End"
 msgstr ""
 
 msgid "Max altitude"

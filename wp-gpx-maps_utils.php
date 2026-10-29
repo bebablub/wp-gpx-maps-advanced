@@ -228,7 +228,13 @@ function wpgpxmaps_resolve_local_path(string $src): string|false
 
     foreach ($candidates as $candidate) {
         $real = realpath($candidate);
-        if (false !== $real && is_file($real) && is_readable($real)) {
+        if (
+            false !== $real
+            && is_file($real)
+            && is_readable($real)
+            && 'gpx' === strtolower(pathinfo($real, PATHINFO_EXTENSION))
+            && wpgpxmaps_path_is_allowed($real)
+        ) {
             return $real;
         }
     }

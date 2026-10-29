@@ -118,7 +118,8 @@ function wpgpxmaps_register_settings(): void
             array(
                 'type' => 'string',
                 'default' => $definition['default'],
-                'sanitize_callback' => 'wpgpxmaps_sanitize_setting',
+                // WordPress passes only the value to this callback, so the option name is bound here.
+                'sanitize_callback' => static fn(mixed $value): string => wpgpxmaps_sanitize_setting($value, $option),
                 'show_in_rest' => false,
             )
         );

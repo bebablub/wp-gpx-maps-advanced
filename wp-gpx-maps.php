@@ -3,7 +3,7 @@
  * Plugin Name: WP-GPX-Maps
  * Plugin URI: https://github.com/bebablub/wp-gpx-maps-advanced
  * Description: Draws a GPX track on a map with altitude, speed and heart rate charts.
- * Version: 3.0.0
+ * Version: 3.0.1
  * Requires at least: 7.1
  * Requires PHP: 8.3
  * Author: Bastianon Massimo, Benjamin Barinka
@@ -26,7 +26,7 @@ if (version_compare(PHP_VERSION, '8.3', '<')) {
 	return;
 }
 
-define('WPGPXMAPS_VERSION', '3.0.0');
+define('WPGPXMAPS_VERSION', '3.0.1');
 define('WPGPXMAPS_FILE', __FILE__);
 define('WPGPXMAPS_DIR', plugin_dir_path(__FILE__));
 
@@ -89,10 +89,11 @@ function wpgpxmaps_frontend_settings(): array
 		'language' => str_replace('_', '-', get_locale()),
 		// Return false when a theme or another plugin already loads the Google Maps JS API.
 		'loadMaps' => (bool) apply_filters('wpgpxmaps_load_google_maps', true),
-		'imgUrl' => plugins_url('img/', WPGPXMAPS_FILE),
 		'i18n' => array(
 			'altitude' => __('Altitude', 'wp-gpx-maps'),
 			'currentPosition' => __('Current Position', 'wp-gpx-maps'),
+			'start' => __('Start', 'wp-gpx-maps'),
+			'end' => __('End', 'wp-gpx-maps'),
 			'speed' => __('Speed', 'wp-gpx-maps'),
 			'grade' => __('Grade', 'wp-gpx-maps'),
 			'heartRate' => __('Heart rate', 'wp-gpx-maps'),
@@ -102,7 +103,6 @@ function wpgpxmaps_frontend_settings(): array
 			'showImages' => __('Show Images', 'wp-gpx-maps'),
 			'backToCenter' => __('Back to center', 'wp-gpx-maps'),
 			'avgLabel' => __('avg', 'wp-gpx-maps'),
-			'avgAltitude' => __('Avg altitude', 'wp-gpx-maps'),
 			'maxAltitude' => __('Max altitude', 'wp-gpx-maps'),
 			'maxSpeed' => __('Max speed', 'wp-gpx-maps'),
 			'zoom' => __('Zoom', 'wp-gpx-maps'),

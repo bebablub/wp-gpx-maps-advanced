@@ -168,28 +168,81 @@
       google.maps.marker.AdvancedMarkerElement,
     );
 
+  // Same look as before: yellow mountain pin, red rocket pin; start/end/waypoint/GPS get simple pins
+  // unless the shortcode or the settings provide an image.
+  const PINS = {
+    altitude: {
+      glyph: "\u26F0",
+      background: "#f9ab00",
+      borderColor: "#c97d00",
+      glyphColor: "#ffffff",
+    },
+    speed: {
+      glyph: "\uD83D\uDE80",
+      background: "#d93025",
+      borderColor: "#9b1c17",
+      glyphColor: "#ffffff",
+    },
+    start: {
+      glyph: "\u25B6",
+      background: "#188038",
+      borderColor: "#0b5d27",
+      glyphColor: "#ffffff",
+    },
+    end: {
+      glyph: "\uD83C\uDFC1",
+      background: "#3c4043",
+      borderColor: "#202124",
+      glyphColor: "#ffffff",
+    },
+    waypoint: {
+      glyph: "",
+      background: "#188038",
+      borderColor: "#0b5d27",
+      glyphColor: "#ffffff",
+    },
+    gps: {
+      glyph: "",
+      background: "#4285f4",
+      borderColor: "#1a56c4",
+      glyphColor: "#ffffff",
+    },
+  };
+  const DEFAULT_CURRENT_ICON =
+    "https://maps.google.com/mapfiles/kml/pal4/icon25.png";
+
+  /** Builds a PinElement without using the deprecated `glyph` / `element` members. */
+  function createPin(pin) {
+    const PinElement = google.maps.marker.PinElement;
+    const options = {
+      background: pin.background,
+      borderColor: pin.borderColor,
+      glyphColor: pin.glyphColor,
+    };
+    if (pin.glyph) {
+      options["glyphText" in PinElement.prototype ? "glyphText" : "glyph"] =
+        pin.glyph;
+    }
+    const element = new PinElement(options);
+    return element instanceof HTMLElement ? element : element.element;
+  }
+
   /**
    * Creates a marker (AdvancedMarkerElement when a Map ID is set, classic Marker otherwise).
-   * Options: map, position, title, zIndex, iconUrl, color (default pin color), glyph.
+   * Options: map, position, title, zIndex, iconUrl (image) or pin {glyph, background, borderColor,
+   * glyphColor}; the classic Marker draws a coloured circle with the glyph instead of a pin.
    */
   function createMarker(map, o) {
     if (useAdvancedMarkers()) {
       let content;
-      if (o.iconUrl) {
+      if (o.pin) {
+        content = createPin(o.pin);
+      } else if (o.iconUrl) {
         content = document.createElement("img");
         content.src = o.iconUrl;
         content.alt = "";
         content.style.width = "32px";
         content.style.height = "32px";
-      } else if (o.color || o.glyph) {
-        const pin = new google.maps.marker.PinElement({
-          background: o.color || undefined,
-          borderColor: "#ffffff",
-          glyph: o.glyph || undefined,
-          glyphColor: "#ffffff",
-          scale: o.scale || 1,
-        });
-        content = pin.element || pin;
       }
       const m = new google.maps.marker.AdvancedMarkerElement({
         map,
@@ -206,7 +259,7 @@
         setTitle: (t) => {
           m.title = t;
         },
-        onClick: (fn) => m.addListener("click", fn),
+        onClick: (fn) => m.addEventListener("gmp-click", fn),
         onHover: (enter, leave) => {
           const el = m.content || m;
           el.addEventListener("mouseenter", enter);
@@ -221,17 +274,25 @@
       title: o.title || "",
       zIndex: o.zIndex,
     };
-    if (o.iconUrl) {
-      options.icon = o.iconUrl;
-    } else if (o.color) {
+    if (o.pin) {
       options.icon = {
         path: google.maps.SymbolPath.CIRCLE,
-        scale: 7 * (o.scale || 1),
-        fillColor: o.color,
+        scale: 9,
+        fillColor: o.pin.background,
         fillOpacity: 1,
-        strokeColor: "#ffffff",
+        strokeColor: o.pin.borderColor,
         strokeWeight: 2,
       };
+      if (o.pin.glyph) {
+        options.label = {
+          text: o.pin.glyph,
+          color: o.pin.glyphColor,
+          fontWeight: "bold",
+          fontSize: "12px",
+        };
+      }
+    } else if (o.iconUrl) {
+      options.icon = o.iconUrl;
     }
     const m = new google.maps.Marker(options);
     return {
@@ -564,7 +625,7 @@
     }
 
     const button = makeControlButton(
-      `${SETTINGS.imgUrl}hideImages.png`,
+      "imagesOff",
       I18N.hideImages || "Hide Images",
     );
     button.addEventListener("click", () => {
@@ -573,26 +634,69 @@
       const label = visible
         ? I18N.hideImages || "Hide Images"
         : I18N.showImages || "Show Images";
-      button.firstChild.src = `${SETTINGS.imgUrl}${visible ? "hideImages" : "showImages"}.png`;
+      setControlIcon(button, visible ? "imagesOff" : "images");
       button.title = label;
       button.setAttribute("aria-label", label);
     });
     ctx.map.controls[google.maps.ControlPosition.RIGHT_CENTER].push(button);
   }
 
-  function makeControlButton(iconUrl, label) {
+  // Line icons (24x24); drawn with the button's text colour so they are always visible.
+  const CONTROL_ICONS = {
+    images: [
+      ["rect", { x: 3, y: 4, width: 18, height: 16, rx: 2 }],
+      ["circle", { cx: 9, cy: 10, r: 1.5 }],
+      ["path", { d: "M21 16l-5-5-8 8" }],
+    ],
+    imagesOff: [
+      ["rect", { x: 3, y: 4, width: 18, height: 16, rx: 2 }],
+      ["circle", { cx: 9, cy: 10, r: 1.5 }],
+      ["path", { d: "M21 16l-5-5-8 8" }],
+      ["path", { d: "M3 3l18 18" }],
+    ],
+    center: [
+      ["circle", { cx: 12, cy: 12, r: 4 }],
+      ["path", { d: "M12 2v4M12 18v4M2 12h4M18 12h4" }],
+    ],
+  };
+
+  function setControlIcon(button, name) {
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", "22");
+    svg.setAttribute("height", "22");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+    svg.style.display = "block";
+    (CONTROL_ICONS[name] || []).forEach(([tag, attrs]) => {
+      const node = document.createElementNS(NS, tag);
+      Object.keys(attrs).forEach((key) => node.setAttribute(key, attrs[key]));
+      svg.appendChild(node);
+    });
+    clear(button);
+    button.appendChild(svg);
+  }
+
+  /** Square white map control in the style of the Google Maps buttons. */
+  function makeControlButton(icon, label) {
     const button = document.createElement("button");
     button.type = "button";
     button.title = label;
     button.setAttribute("aria-label", label);
     button.style.cssText =
-      "margin:6px;padding:4px;border:0;border-radius:2px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.3);cursor:pointer;line-height:0";
-    const img = document.createElement("img");
-    img.src = iconUrl;
-    img.alt = "";
-    img.width = 25;
-    img.height = 25;
-    button.appendChild(img);
+      "display:flex;align-items:center;justify-content:center;width:40px;height:40px;margin:10px;padding:0;border:0;border-radius:2px;background:#fff;color:#666;box-shadow:0 1px 4px -1px rgba(0,0,0,.3);cursor:pointer";
+    button.addEventListener("mouseenter", () => {
+      button.style.color = "#000";
+    });
+    button.addEventListener("mouseleave", () => {
+      button.style.color = "#666";
+    });
+    setControlIcon(button, icon);
     return button;
   }
 
@@ -618,6 +722,79 @@
       }
       return count ? sum / count : null;
     });
+  }
+
+  /** Great-circle distance in meters. */
+  function haversine(a, b) {
+    const rad = Math.PI / 180;
+    const dLat = (b.lat - a.lat) * rad;
+    const dLng = (b.lng - a.lng) * rad;
+    const h =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+    return 12742000 * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+
+  const MAX_ARROWS_PER_BLOCK = 150;
+  const ARROW_DIRECTION_SPAN = 25; // meters of track used to get a stable heading
+
+  /**
+   * Draws a direction arrow every `spacing` meters along `path`. Each arrow is a single symbol on a
+   * short invisible line, so the spacing does not depend on how the map renders repeated symbols.
+   */
+  function drawArrows(map, path, color, spacing) {
+    if (!(spacing > 0) || path.length < 2) {
+      return;
+    }
+    const cumulative = [0];
+    for (let i = 1; i < path.length; i++) {
+      cumulative.push(cumulative[i - 1] + haversine(path[i - 1], path[i]));
+    }
+    const total = cumulative[cumulative.length - 1];
+    if (total <= 0) {
+      return;
+    }
+    const step = Math.max(spacing, total / MAX_ARROWS_PER_BLOCK);
+    const icon = {
+      path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+      scale: 2,
+      strokeColor: color,
+      strokeOpacity: 1,
+      strokeWeight: 2,
+    };
+
+    let segment = 1;
+    for (let at = step / 2; at < total; at += step) {
+      while (segment < path.length - 1 && cumulative[segment] < at) {
+        segment++;
+      }
+      let from = segment - 1;
+      let to = segment;
+      while (
+        from > 0 &&
+        cumulative[to] - cumulative[from] < ARROW_DIRECTION_SPAN
+      ) {
+        from--;
+      }
+      while (
+        to < path.length - 1 &&
+        cumulative[to] - cumulative[from] < ARROW_DIRECTION_SPAN
+      ) {
+        to++;
+      }
+      const span = cumulative[to] - cumulative[from];
+      if (span <= 0) {
+        continue;
+      }
+      const offset = ((at - cumulative[from]) / span) * 100;
+      new google.maps.Polyline({
+        map,
+        path: [path[from], path[to]],
+        strokeOpacity: 0,
+        clickable: false,
+        icons: [{ icon, offset: `${Math.max(0, Math.min(100, offset))}%` }],
+      });
+    }
   }
 
   function drawTrack(ctx) {
@@ -653,31 +830,18 @@
       return poly;
     };
 
-    const arrows = cfg.arrowRepeat
-      ? [
-          {
-            icon: {
-              path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-              scale: 2,
-              strokeOpacity: 1,
-              strokeWeight: 2,
-            },
-            repeat: cfg.arrowRepeat,
-          },
-        ]
-      : null;
+    const arrowSpacing =
+      Number(cfg.arrowKm) > 0 ? Number(cfg.arrowKm) * 1000 : 0;
 
     const drawBlock = (indices, blockNumber) => {
       if (indices.length < 2) {
         return;
       }
       const base = colors[blockNumber % colors.length];
+      const blockPath = indices.map((i) => pts[i]);
       if (!grades) {
-        addPolyline(
-          indices.map((i) => pts[i]),
-          base,
-          arrows,
-        );
+        addPolyline(blockPath, base, null);
+        drawArrows(map, blockPath, base, arrowSpacing);
         return;
       }
 
@@ -710,16 +874,7 @@
         path.push(pts[i]);
       });
       flush();
-
-      if (arrows) {
-        const overlay = new google.maps.Polyline({
-          map,
-          path: indices.map((i) => pts[i]),
-          strokeOpacity: 0,
-          icons: arrows,
-        });
-        overlay.addListener("mouseover", onHover);
-      }
+      drawArrows(map, blockPath, base, arrowSpacing);
     };
 
     let block = [];
@@ -743,19 +898,21 @@
     const first = pts.find(Boolean);
     const last = [...pts].reverse().find(Boolean);
 
-    if (first && icons.start) {
+    if (first) {
       createMarker(map, {
         position: first,
-        title: "",
-        iconUrl: icons.start,
+        title: I18N.start || "Start",
+        iconUrl: icons.start || "",
+        pin: icons.start ? null : PINS.start,
         zIndex: 2,
       });
     }
-    if (last && icons.end) {
+    if (last && last !== first) {
       createMarker(map, {
         position: last,
-        title: "",
-        iconUrl: icons.end,
+        title: I18N.end || "End",
+        iconUrl: icons.end || "",
+        pin: icons.end ? null : PINS.end,
         zIndex: 3,
       });
     }
@@ -763,8 +920,7 @@
       ctx.current = createMarker(map, {
         position: first,
         title: I18N.currentPosition || "",
-        iconUrl: icons.current || "",
-        color: "#3366cc",
+        iconUrl: icons.current || DEFAULT_CURRENT_ICON,
         zIndex: 4,
       });
     }
@@ -781,15 +937,14 @@
         ? `${fmt(v, speedDecimals(cfg))} ${cfg.units.speed}`
         : "-";
     };
-    const addExtreme = (extreme, title, color, glyph, isElevation) => {
+    const addExtreme = (extreme, title, pin, isElevation) => {
       if (!extreme || !pts[extreme.index]) {
         return;
       }
       const marker = createMarker(map, {
         position: pts[extreme.index],
         title,
-        color,
-        glyph,
+        pin,
         zIndex: 3,
       });
       const content = () =>
@@ -803,15 +958,13 @@
     addExtreme(
       extremes.maxEle,
       I18N.maxAltitude || "Max altitude",
-      "#d93025",
-      "\u25B2",
+      PINS.altitude,
       true,
     );
     addExtreme(
       extremes.maxSpeed,
       I18N.maxSpeed || "Max speed",
-      "#f9ab00",
-      "\u00BB",
+      PINS.speed,
       false,
     );
 
@@ -825,7 +978,7 @@
         position,
         title: w.name || "",
         iconUrl: w.img || "",
-        color: w.img ? "" : "#188038",
+        pin: w.img ? null : PINS.waypoint,
         zIndex: 5,
       });
       marker.onClick(() => openInfo(map, marker, waypointContent(w)));
@@ -839,7 +992,7 @@
   function setupControls(ctx) {
     const { map, bounds } = ctx;
     const button = makeControlButton(
-      `${SETTINGS.imgUrl}backToCenter.png`,
+      "center",
       I18N.backToCenter || "Back to center",
     );
     button.style.display = "none";
@@ -857,7 +1010,7 @@
     });
     map.addListener("center_changed", () => {
       if (!fitting) {
-        button.style.display = "";
+        button.style.display = "flex";
       }
     });
   }
@@ -895,7 +1048,7 @@
           position: point,
           title: I18N.currentPosition || "",
           iconUrl: (ctx.cfg.icons && ctx.cfg.icons.gps) || "",
-          color: "#4285f4",
+          pin: ctx.cfg.icons && ctx.cfg.icons.gps ? null : PINS.gps,
           zIndex: 6,
         });
         ctx.bounds.extend(point);
@@ -1060,16 +1213,7 @@
     const report = byId(`report_${cfg.id}`);
     let selectionBox = null;
     if (report) {
-      const eleValues = (data.ele || []).filter(isNumber);
-      if (eleValues.length) {
-        const avg = eleValues.reduce((a, b) => a + b, 0) / eleValues.length;
-        const line = document.createElement("div");
-        line.className = "wpgpxmaps_avgele";
-        const bold = document.createElement("b");
-        bold.textContent = `${fmt(avg, 0)} ${units.elevation}`;
-        line.append(`${I18N.avgAltitude || "Avg altitude"}: `, bold);
-        report.appendChild(line);
-      }
+      // Only the live zoom selection lives here; whole-track values belong to the summary.
       selectionBox = document.createElement("div");
       selectionBox.className = "wpgpxmaps_selection";
       report.appendChild(selectionBox);

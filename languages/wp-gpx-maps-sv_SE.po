@@ -50,7 +50,10 @@ msgstr ""
 msgid "avg"
 msgstr ""
 
-msgid "Avg altitude"
+msgid "Start"
+msgstr ""
+
+msgid "End"
 msgstr ""
 
 msgid "Max altitude"
