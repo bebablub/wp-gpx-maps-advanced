@@ -244,8 +244,9 @@ check('absolute path outside refused', false === wpgpxmaps_resolve_local_path($b
 check('wrong extension refused', false === wpgpxmaps_resolve_local_path('/wp-content/uploads/gpx/full.php'));
 check('null byte refused', false === wpgpxmaps_resolve_local_path("/wp-content/uploads/gpx/full.gpx\0.txt"));
 check('inside path accepted', false !== wpgpxmaps_resolve_local_path('/wp-content/uploads/gpx/full.gpx'));
-if (function_exists('symlink') && @symlink($base . '/outside/secret.gpx', $dir . '/link.gpx')) {
-    check('symlink pointing outside refused', false === wpgpxmaps_resolve_local_path('/wp-content/uploads/gpx/link.gpx'));
+if (function_exists('symlink') && @symlink($base . '/outside', $content . '/linked')) {
+    check('symlinked folder inside wp-content accepted', false !== wpgpxmaps_resolve_local_path('/wp-content/linked/secret.gpx'));
+    check('traversal through a symlink refused', false === wpgpxmaps_resolve_local_path('/wp-content/linked/../uploads/../../outside/secret.gpx'));
 }
 check('local url maps to file', false !== wpgpxmaps_url_to_local_path('http://example.test/wp-content/uploads/gpx/full.gpx?x=1'));
 check('local path maps back to url', 'http://example.test/wp-content/uploads/gpx/full.gpx' === wpgpxmaps_local_path_to_url((string) realpath($dir . '/full.gpx')));

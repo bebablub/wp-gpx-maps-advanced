@@ -3,7 +3,7 @@
  * Plugin Name: WP-GPX-Maps
  * Plugin URI: https://github.com/bebablub/wp-gpx-maps-advanced
  * Description: Draws a GPX track on a map with altitude, speed and heart rate charts.
- * Version: 3.0.1
+ * Version: 3.0.2
  * Requires at least: 7.1
  * Requires PHP: 8.3
  * Author: Bastianon Massimo, Benjamin Barinka
@@ -26,7 +26,7 @@ if (version_compare(PHP_VERSION, '8.3', '<')) {
 	return;
 }
 
-define('WPGPXMAPS_VERSION', '3.0.1');
+define('WPGPXMAPS_VERSION', '3.0.2');
 define('WPGPXMAPS_FILE', __FILE__);
 define('WPGPXMAPS_DIR', plugin_dir_path(__FILE__));
 

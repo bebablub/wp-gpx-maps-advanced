@@ -162,7 +162,7 @@ function wpgpxmaps_site_root(): string
  *
  * @return string[]
  */
-function wpgpxmaps_allowed_roots(): array
+function wpgpxmaps_allowed_roots(bool $resolve = true): array
 {
     $roots = array();
     $uploads = wp_upload_dir(null, false);
@@ -176,8 +176,11 @@ function wpgpxmaps_allowed_roots(): array
 
     $real = array();
     foreach ($roots as $root) {
-        $resolved = is_string($root) ? realpath($root) : false;
-        if (false !== $resolved) {
+        if (!is_string($root)) {
+            continue;
+        }
+        $resolved = $resolve ? realpath($root) : $root;
+        if (false !== $resolved && '' !== $resolved) {
             $real[] = rtrim(str_replace('\\', '/', $resolved), '/');
         }
     }
@@ -189,6 +192,24 @@ function wpgpxmaps_path_is_allowed(string $real_path): bool
     $real_path = str_replace('\\', '/', $real_path);
     foreach (wpgpxmaps_allowed_roots() as $root) {
         if (str_starts_with($real_path, $root . '/')) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * True when the unresolved path lies inside an allowed folder without ".." segments. This keeps symlinked
+ * sub folders of uploads or wp-content working while traversal out of them stays blocked.
+ */
+function wpgpxmaps_path_is_inside_roots(string $path): bool
+{
+    $path = str_replace('\\', '/', $path);
+    if (in_array('..', explode('/', $path), true)) {
+        return false;
+    }
+    foreach (wpgpxmaps_allowed_roots(false) as $root) {
+        if (str_starts_with($path, $root . '/')) {
             return true;
         }
     }
@@ -233,7 +254,7 @@ function wpgpxmaps_resolve_local_path(string $src): string|false
             && is_file($real)
             && is_readable($real)
             && 'gpx' === strtolower(pathinfo($real, PATHINFO_EXTENSION))
-            && wpgpxmaps_path_is_allowed($real)
+            && (wpgpxmaps_path_is_allowed($real) || wpgpxmaps_path_is_inside_roots($candidate))
         ) {
             return $real;
         }
