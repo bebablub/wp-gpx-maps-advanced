@@ -75,6 +75,8 @@ function wpgpxmaps_settings_schema(): array
         // Map.
         'wpgpxmaps_map_type' => array('type' => 'enum', 'default' => 'HYBRID', 'choices' => wpgpxmaps_map_types()),
         'wpgpxmaps_map_line_color' => array('type' => 'color_list', 'default' => '#3366cc'),
+        'wpgpxmaps_map_style' => array('type' => 'enum', 'default' => 'light', 'choices' => array('light', 'dark', 'auto')),
+        'wpgpxmaps_map_style_toggle' => $bool('true'),
         'wpgpxmaps_show_waypoint' => $bool(),
         'wpgpxmaps_zoomonscrollwheel' => $bool(),
         'wpgpxmaps_show_extreme_markers' => $bool('true'),

@@ -88,6 +88,8 @@ function wpgpxmaps_shortcode_options(array $attr): array
         'mheight' => wpgpxmaps_sanitize_css_size($f('mheight', 'wpgpxmaps_height', '450px'), '450px'),
         'gheight' => wpgpxmaps_sanitize_css_size($f('gheight', 'wpgpxmaps_graph_height', '200px'), '200px'),
         'mtype' => $choice('mtype', 'wpgpxmaps_map_type', $map_types, 'HYBRID'),
+        'mstyle' => strtolower($choice('mapstyle', 'wpgpxmaps_map_style', array('LIGHT', 'DARK', 'AUTO'), 'LIGHT')),
+        'mstyle_toggle' => $b('mapstyletoggle', 'wpgpxmaps_map_style_toggle', true),
         'uom' => $choice('uom', 'wpgpxmaps_unit_of_measure', array('0', '1', '2', '3', '4', '5'), '0'),
         'uomspeed' => $choice('uomspeed', 'wpgpxmaps_unit_of_measure_speed', array('0', '1', '2', '3', '4', '5', '6'), '0'),
         'distance_type' => (int) $choice('distancetype', 'wpgpxmaps_distance_type', array('0', '1', '2'), '0'),
@@ -342,6 +344,8 @@ function handle_WP_GPX_Maps_Shortcodes($attr, $content = '', $tag = ''): string
     $config = array(
         'id' => $r,
         'mapType' => $o['mtype'],
+        'mapStyle' => $o['mstyle'],
+        'styleToggle' => $o['mstyle_toggle'],
         'map' => $track['map'],
         'chart' => $hide_graph ? null : $series,
         'mapGrade' => $o['elev_color'] && $track['has']['grade'] ? array_map(static fn($v) => null === $v ? null : round((float) $v, 2), $track['grade']) : array(),

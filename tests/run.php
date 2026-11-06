@@ -321,6 +321,12 @@ $opts = wpgpxmaps_shortcode_options(array('mtype' => 'OSM3', 'uom' => '9'));
 check('unknown map type falls back', 'HYBRID' === $opts['mtype']);
 check('unknown unit falls back', '0' === $opts['uom']);
 check('stored empty option means off', false === wpgpxmaps_shortcode_options(array())['showele']);
+$opts = wpgpxmaps_shortcode_options(array('mapstyle' => 'Dark', 'mapstyletoggle' => 'false'));
+check('shortcode map style normalised', 'dark' === $opts['mstyle'] && false === $opts['mstyle_toggle']);
+$opts = wpgpxmaps_shortcode_options(array('mapstyle' => 'neon'));
+check('unknown map style falls back', 'light' === $opts['mstyle'] && true === $opts['mstyle_toggle']);
+check('map style auto accepted', 'auto' === wpgpxmaps_shortcode_options(array('mapstyle' => 'AUTO'))['mstyle']);
+check('setting map style enum', 'dark' === wpgpxmaps_sanitize_setting('dark', 'wpgpxmaps_map_style') && 'light' === wpgpxmaps_sanitize_setting('x', 'wpgpxmaps_map_style'));
 
 // ------------------------------------------------------------------ units
 

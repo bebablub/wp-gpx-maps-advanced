@@ -28,6 +28,12 @@ function wpgpxmaps_settings_choices(string $option): array
 				'quarterly' => __('Quarterly (stable, default)', 'wp-gpx-maps'),
 				'weekly' => __('Weekly (latest features)', 'wp-gpx-maps'),
 			);
+		case 'wpgpxmaps_map_style':
+			return array(
+				'light' => __('Light (default)', 'wp-gpx-maps'),
+				'dark' => __('Dark', 'wp-gpx-maps'),
+				'auto' => __('Auto (follow visitor preference)', 'wp-gpx-maps'),
+			);
 		case 'wpgpxmaps_map_type':
 			return array(
 				'HYBRID' => __('Hybrid: street names on satellite images', 'wp-gpx-maps'),
@@ -108,6 +114,8 @@ function wpgpxmaps_settings_sections(): array
 			array('wpgpxmaps_show_waypoint', __('Waypoints support', 'wp-gpx-maps'), __('Show waypoints', 'wp-gpx-maps')),
 			array('wpgpxmaps_map_line_color', __('Map line color', 'wp-gpx-maps'), __('One or more colors separated by spaces.', 'wp-gpx-maps')),
 			array('wpgpxmaps_map_type', __('Default map type', 'wp-gpx-maps')),
+			array('wpgpxmaps_map_style', __('Map style', 'wp-gpx-maps'), __('Auto follows the visitor\'s light/dark preference. With a Google Maps Map ID the style is applied once on page load and needs a vector map.', 'wp-gpx-maps')),
+			array('wpgpxmaps_map_style_toggle', __('Light/dark switch', 'wp-gpx-maps'), __('Show a button on the map to switch between light and dark (not with a Map ID)', 'wp-gpx-maps')),
 			array('wpgpxmaps_map_start_icon', __('Start icon', 'wp-gpx-maps'), __('URL of an image. Leave empty to hide.', 'wp-gpx-maps')),
 			array('wpgpxmaps_map_end_icon', __('End icon', 'wp-gpx-maps'), __('URL of an image. Leave empty to hide.', 'wp-gpx-maps')),
 			array('wpgpxmaps_map_current_icon', __('Current position icon', 'wp-gpx-maps'), __('URL of an image. Leave empty for the default.', 'wp-gpx-maps')),

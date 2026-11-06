@@ -26,6 +26,7 @@ Based up on version 1.3.17 hosted at
 - Map markers for max speed and max altitude positions (when data is available)
 - HTML5 GPS position: show the visitor's real-time location on the map and follow their movement
 - Distance type selector: Normal (3D), Flat (horizontal only), or Climb (elevation only) for mountaineering reports
+- Dark map style: light, dark or automatic (follows the visitor's light/dark preference), with an optional switch button on the map
 - Spinner overlay while map initializes
 - Conditional asset loading (scripts only enqueued when shortcode is present)
 - Several tracks on one page, in widgets and in block themes
@@ -131,6 +132,8 @@ Thanks to: [www.securcube.net](http://www.securcube.net/), [www.devfarm.it](http
 | `mheight`            | Map height                                                                                                                                                                                                                                         | 450px         |
 | `gheight`            | Graph height (set to 0 to hide)                                                                                                                                                                                                                    | 200px         |
 | `mtype`              | Map type: HYBRID, ROADMAP, SATELLITE, TERRAIN, OSM1 (Open Street Map), OSM2 (Open Cycle Map), OSM4 (Open Cycle Map - Transport), OSM5 (Open Cycle Map - Landscape), OSM6 (MapTiler - Outdoor), OSM7 (MapTiler - Topo), OSM8 (MapTiler - Landscape) | HYBRID        |
+| `mapstyle`           | Map style: light, dark or auto (follows the visitor's light/dark preference). With a Google Maps Map ID the style is applied once on page load (vector Map ID required); without a Map ID it also switches live | light |
+| `mapstyletoggle`     | Show the light/dark switch button on the map (not shown with a Map ID) | true |
 | `waypoints`          | Show GPX waypoints on the map                                                                                                                                                                                                                      | FALSE         |
 | `donotreducegpx`     | Print all points without reducing (on by default after installation, see Settings)                                                                                                                                                                 | FALSE         |
 | `pointsoffset`       | Skip points closer than XX meters                                                                                                                                                                                                                  | 10            |
@@ -236,6 +239,10 @@ Yes!
 - The chart is no longer hidden on mobile screens.
 - Deactivating the plugin keeps settings; deleting it removes options and cache.
 - The `$_GET` fallback for shortcode attributes was removed.
+
+**Added:**
+
+- Dark map style (`mapstyle` = light, dark or auto) with a switch button (`mapstyletoggle`); the visitor's choice is remembered in the browser. Charts, controls, info windows and the summary follow the style. OSM4, OSM6 and OSM7 use their dark tile variants; OSM1, OSM2, OSM5 and OSM8 have none and stay light. With a Map ID the style is applied once on page load (vector Map ID required) and there is no switch.
 
 **Fixed:**
 

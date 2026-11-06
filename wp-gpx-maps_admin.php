@@ -115,6 +115,8 @@ function wpgpxmaps_shortcode_attributes(): array
 		'mheight' => 'Map height.',
 		'gheight' => 'Chart height; 0 hides the chart.',
 		'mtype' => 'Map type: HYBRID, ROADMAP, SATELLITE, TERRAIN, OSM1 (OpenStreetMap), OSM2 (Thunderforest Cycle), OSM4 (Thunderforest Transport), OSM5 (Thunderforest Landscape), OSM6 (MapTiler Outdoor), OSM7 (MapTiler Topo), OSM8 (MapTiler Landscape). OSM2/4/5 need a Thunderforest key and OSM6-8 a MapTiler key.',
+		'mapstyle' => 'Map style: light (default), dark or auto (follows the visitor\'s light/dark preference). With a Google Maps Map ID the style is applied once on page load.',
+		'mapstyletoggle' => 'Show the light/dark switch button on the map (default true; not shown with a Map ID).',
 		'waypoints' => 'Show the GPX waypoints on the map (default false).',
 		'donotreducegpx' => 'Keep every point instead of reducing long tracks (set in Settings; on after a fresh install).',
 		'pointsoffset' => 'Skip points closer than N meters (default 10).',

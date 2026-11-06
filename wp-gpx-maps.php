@@ -102,6 +102,8 @@ function wpgpxmaps_frontend_settings(): array
 			'hideImages' => __('Hide Images', 'wp-gpx-maps'),
 			'showImages' => __('Show Images', 'wp-gpx-maps'),
 			'backToCenter' => __('Back to center', 'wp-gpx-maps'),
+			'switchToDark' => __('Switch to dark map', 'wp-gpx-maps'),
+			'switchToLight' => __('Switch to light map', 'wp-gpx-maps'),
 			'avgLabel' => __('avg', 'wp-gpx-maps'),
 			'maxAltitude' => __('Max altitude', 'wp-gpx-maps'),
 			'maxSpeed' => __('Max speed', 'wp-gpx-maps'),

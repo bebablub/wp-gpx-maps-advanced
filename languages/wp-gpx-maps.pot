@@ -47,6 +47,12 @@ msgstr ""
 msgid "Back to center"
 msgstr ""
 
+msgid "Switch to dark map"
+msgstr ""
+
+msgid "Switch to light map"
+msgstr ""
+
 msgid "avg"
 msgstr ""
 
@@ -335,6 +341,27 @@ msgid "One or more colors separated by spaces."
 msgstr ""
 
 msgid "Default map type"
+msgstr ""
+
+msgid "Map style"
+msgstr ""
+
+msgid "Auto follows the visitor's light/dark preference. With a Google Maps Map ID the style is applied once on page load and needs a vector map."
+msgstr ""
+
+msgid "Light/dark switch"
+msgstr ""
+
+msgid "Show a button on the map to switch between light and dark (not with a Map ID)"
+msgstr ""
+
+msgid "Light (default)"
+msgstr ""
+
+msgid "Dark"
+msgstr ""
+
+msgid "Auto (follow visitor preference)"
 msgstr ""
 
 msgid "Start icon"

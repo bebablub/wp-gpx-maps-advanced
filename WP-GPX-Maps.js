@@ -90,6 +90,139 @@
     return `rgb(${mix(r, 255)},${mix(g, 0)},${mix(b, 0)})`;
   }
 
+  // ------------------------------------------------------------ color scheme
+
+  const STYLE_KEY = "wpgpxmaps_style";
+  const styleListeners = new Set();
+  const darkQuery = window.matchMedia
+    ? window.matchMedia("(prefers-color-scheme: dark)")
+    : null;
+  let manualStyle = "";
+  let mediaBound = false;
+
+  // Google's "night mode" sample style; only used without a Map ID.
+  const DARK_MAP_STYLES = [
+    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+    {
+      featureType: "administrative.locality",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#d59563" }],
+    },
+    {
+      featureType: "poi",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#d59563" }],
+    },
+    {
+      featureType: "poi.park",
+      elementType: "geometry",
+      stylers: [{ color: "#263c3f" }],
+    },
+    {
+      featureType: "poi.park",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#6b9a76" }],
+    },
+    {
+      featureType: "road",
+      elementType: "geometry",
+      stylers: [{ color: "#38414e" }],
+    },
+    {
+      featureType: "road",
+      elementType: "geometry.stroke",
+      stylers: [{ color: "#212a37" }],
+    },
+    {
+      featureType: "road",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#9ca5b3" }],
+    },
+    {
+      featureType: "road.highway",
+      elementType: "geometry",
+      stylers: [{ color: "#746855" }],
+    },
+    {
+      featureType: "road.highway",
+      elementType: "geometry.stroke",
+      stylers: [{ color: "#1f2835" }],
+    },
+    {
+      featureType: "road.highway",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#f3d19c" }],
+    },
+    {
+      featureType: "transit",
+      elementType: "geometry",
+      stylers: [{ color: "#2f3948" }],
+    },
+    {
+      featureType: "transit.station",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#d59563" }],
+    },
+    {
+      featureType: "water",
+      elementType: "geometry",
+      stylers: [{ color: "#17263c" }],
+    },
+    {
+      featureType: "water",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#515c6d" }],
+    },
+    {
+      featureType: "water",
+      elementType: "labels.text.stroke",
+      stylers: [{ color: "#17263c" }],
+    },
+  ];
+
+  /** The visitor's last manual choice ("light", "dark" or ""). */
+  function readManualStyle() {
+    if (!manualStyle) {
+      try {
+        const value = window.localStorage.getItem(STYLE_KEY);
+        manualStyle = value === "light" || value === "dark" ? value : "";
+      } catch (e) {
+        manualStyle = "";
+      }
+    }
+    return manualStyle;
+  }
+
+  function storeManualStyle(value) {
+    manualStyle = value;
+    try {
+      window.localStorage.setItem(STYLE_KEY, value);
+    } catch (e) {
+      // Storage can be blocked; the choice then only lasts for this page view.
+    }
+  }
+
+  const notifyStyle = () => styleListeners.forEach((update) => update());
+
+  /** Visitor choice (only while the switch is shown), then shortcode/setting, then the OS preference. */
+  function resolveDark(cfg, toggleable) {
+    const mode = (toggleable && readManualStyle()) || cfg.mapStyle || "light";
+    return (
+      mode === "dark" ||
+      (mode === "auto" && Boolean(darkQuery && darkQuery.matches))
+    );
+  }
+
+  function setThemeClass(root, cfg, dark) {
+    [root, byId(`wpgpxmaps_summary_${cfg.id}`)].forEach((el) => {
+      if (el) {
+        el.classList.toggle("wpgpxmaps-dark", dark);
+      }
+    });
+  }
+
   // ------------------------------------------------------------- Google Maps
 
   function loadGoogle() {
@@ -383,6 +516,8 @@
       key: "tfKey",
       url: (z, x, y, k) =>
         `https://tile.thunderforest.com/transport/${z}/${x}/${y}.png?apikey=${encodeURIComponent(k)}`,
+      darkUrl: (z, x, y, k) =>
+        `https://tile.thunderforest.com/transport-dark/${z}/${x}/${y}.png?apikey=${encodeURIComponent(k)}`,
       credit: ["Thunderforest", "https://www.thunderforest.com/"],
     },
     OSM5: {
@@ -397,6 +532,8 @@
       key: "mtKey",
       url: (z, x, y, k) =>
         `https://api.maptiler.com/maps/outdoor-v2/256/${z}/${x}/${y}.png?key=${encodeURIComponent(k)}`,
+      darkUrl: (z, x, y, k) =>
+        `https://api.maptiler.com/maps/outdoor-v2-dark/256/${z}/${x}/${y}.png?key=${encodeURIComponent(k)}`,
       credit: ["MapTiler", "https://www.maptiler.com/copyright/"],
     },
     OSM7: {
@@ -404,6 +541,8 @@
       key: "mtKey",
       url: (z, x, y, k) =>
         `https://api.maptiler.com/maps/topo-v2/256/${z}/${x}/${y}.png?key=${encodeURIComponent(k)}`,
+      darkUrl: (z, x, y, k) =>
+        `https://api.maptiler.com/maps/topo-v2-dark/256/${z}/${x}/${y}.png?key=${encodeURIComponent(k)}`,
       credit: ["MapTiler", "https://www.maptiler.com/copyright/"],
     },
     OSM8: {
@@ -415,8 +554,26 @@
     },
   };
 
+  function tileMapType(source, key, dark) {
+    const url = (dark && source.darkUrl) || source.url;
+    return new google.maps.ImageMapType({
+      name: source.name,
+      alt: source.name,
+      tileSize: new google.maps.Size(256, 256),
+      maxZoom: source.maxZoom || 18,
+      getTileUrl: (coord, zoom) => {
+        const tiles = 2 ** zoom;
+        if (coord.y < 0 || coord.y >= tiles) {
+          return "";
+        }
+        const x = ((coord.x % tiles) + tiles) % tiles;
+        return url(zoom, x, coord.y, key);
+      },
+    });
+  }
+
   /** Registers the tile layers that are usable with the configured keys; returns their ids. */
-  function registerTileLayers(map) {
+  function registerTileLayers(map, dark) {
     const available = [];
     Object.keys(TILE_SOURCES).forEach((id) => {
       const source = TILE_SOURCES[id];
@@ -424,26 +581,31 @@
       if (source.key && !key) {
         return;
       }
-      map.mapTypes.set(
-        id,
-        new google.maps.ImageMapType({
-          name: source.name,
-          alt: source.name,
-          tileSize: new google.maps.Size(256, 256),
-          maxZoom: source.maxZoom || 18,
-          getTileUrl: (coord, zoom) => {
-            const tiles = 2 ** zoom;
-            if (coord.y < 0 || coord.y >= tiles) {
-              return "";
-            }
-            const x = ((coord.x % tiles) + tiles) % tiles;
-            return source.url(zoom, x, coord.y, key);
-          },
-        }),
-      );
+      map.mapTypes.set(id, tileMapType(source, key, dark));
       available.push(id);
     });
     return available;
+  }
+
+  /** Swaps tile layers that have a dark variant; the visible one is reloaded. */
+  function refreshTileLayers(map, tileIds, dark) {
+    const current = map.getMapTypeId();
+    let reload = false;
+    tileIds.forEach((id) => {
+      const source = TILE_SOURCES[id];
+      if (!source.darkUrl) {
+        return;
+      }
+      map.mapTypes.set(
+        id,
+        tileMapType(source, source.key ? SETTINGS[source.key] : "", dark),
+      );
+      reload = reload || id === current;
+    });
+    if (reload) {
+      map.setMapTypeId("roadmap");
+      map.setMapTypeId(current);
+    }
   }
 
   function setupOsmFooter(map, id, tileIds) {
@@ -658,6 +820,16 @@
       ["circle", { cx: 12, cy: 12, r: 4 }],
       ["path", { d: "M12 2v4M12 18v4M2 12h4M18 12h4" }],
     ],
+    moon: [["path", { d: "M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" }]],
+    sun: [
+      ["circle", { cx: 12, cy: 12, r: 4 }],
+      [
+        "path",
+        {
+          d: "M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4",
+        },
+      ],
+    ],
   };
 
   function setControlIcon(button, name) {
@@ -689,12 +861,12 @@
     button.title = label;
     button.setAttribute("aria-label", label);
     button.style.cssText =
-      "display:flex;align-items:center;justify-content:center;width:40px;height:40px;margin:10px;padding:0;border:0;border-radius:2px;background:#fff;color:#666;box-shadow:0 1px 4px -1px rgba(0,0,0,.3);cursor:pointer";
+      "display:flex;align-items:center;justify-content:center;width:40px;height:40px;margin:10px;padding:0;border:0;border-radius:2px;background:var(--wpgpxmaps-ctl-bg,#fff);color:var(--wpgpxmaps-ctl-fg,#666);box-shadow:0 1px 4px -1px rgba(0,0,0,.3);cursor:pointer";
     button.addEventListener("mouseenter", () => {
-      button.style.color = "#000";
+      button.style.color = "var(--wpgpxmaps-ctl-hover,#000)";
     });
     button.addEventListener("mouseleave", () => {
-      button.style.color = "#666";
+      button.style.color = "var(--wpgpxmaps-ctl-fg,#666)";
     });
     setControlIcon(button, icon);
     return button;
@@ -1335,6 +1507,71 @@
 
     ctx.chart = window.Highcharts.chart(container, options);
     ctx.indexToRow = indexToRow;
+
+    // Re-read the (possibly changed) text colour after a light/dark switch.
+    ctx.themeChart = () => {
+      const color = window.getComputedStyle(container).color || "#333333";
+      const style = { color };
+      ctx.chart.update({
+        xAxis: { labels: { style } },
+        yAxis: yAxis.map(() => ({ labels: { style } })),
+        legend: { itemStyle: style, itemHoverStyle: style },
+      });
+    };
+  }
+
+  /**
+   * Light/dark theming. A Map ID fixes the Google color scheme at map creation, so such maps get
+   * no switch and no live change; other maps switch the style and tile layers live.
+   */
+  function setupStyle(ctx, root, toggleable) {
+    const { cfg, map } = ctx;
+    if (SETTINGS.mapId || (!toggleable && cfg.mapStyle !== "auto")) {
+      return;
+    }
+
+    let button = null;
+    const syncButton = () => {
+      if (!button) {
+        return;
+      }
+      const label = ctx.dark
+        ? I18N.switchToLight || "Switch to light map"
+        : I18N.switchToDark || "Switch to dark map";
+      setControlIcon(button, ctx.dark ? "sun" : "moon");
+      button.title = label;
+      button.setAttribute("aria-label", label);
+    };
+
+    if (toggleable) {
+      button = makeControlButton("moon", "");
+      button.addEventListener("click", () => {
+        storeManualStyle(ctx.dark ? "light" : "dark");
+        notifyStyle();
+      });
+      map.controls[google.maps.ControlPosition.RIGHT_CENTER].push(button);
+      syncButton();
+    }
+
+    styleListeners.add(() => {
+      const dark = resolveDark(cfg, toggleable);
+      if (dark === ctx.dark) {
+        return;
+      }
+      ctx.dark = dark;
+      setThemeClass(root, cfg, dark);
+      map.setOptions({ styles: dark ? DARK_MAP_STYLES : null });
+      refreshTileLayers(map, ctx.tileIds, dark);
+      if (ctx.themeChart) {
+        ctx.themeChart();
+      }
+      syncButton();
+    });
+
+    if (!mediaBound && darkQuery && darkQuery.addEventListener) {
+      mediaBound = true;
+      darkQuery.addEventListener("change", notifyStyle);
+    }
   }
 
   // ----------------------------------------------------------------- instance
@@ -1366,6 +1603,11 @@
       return;
     }
 
+    // A Map ID fixes the Google color scheme at load, so only other maps get a switch.
+    const toggleable = Boolean(cfg.styleToggle) && !SETTINGS.mapId;
+    const dark = resolveDark(cfg, toggleable);
+    setThemeClass(root, cfg, dark);
+
     try {
       await loadGoogle();
 
@@ -1390,10 +1632,14 @@
       };
       if (SETTINGS.mapId) {
         mapOptions.mapId = SETTINGS.mapId;
+        mapOptions.colorScheme = dark ? "DARK" : "LIGHT";
+      } else if (dark) {
+        mapOptions.styles = DARK_MAP_STYLES;
+        mapOptions.backgroundColor = "#242f3e";
       }
       const map = new google.maps.Map(mapEl, mapOptions);
 
-      const tileIds = registerTileLayers(map);
+      const tileIds = registerTileLayers(map, dark);
       const googleTypes = ["roadmap", "satellite", "hybrid", "terrain"];
       map.setOptions({
         mapTypeControlOptions: {
@@ -1416,6 +1662,8 @@
         map,
         pts,
         bounds,
+        dark,
+        tileIds,
         chart: null,
         current: null,
         indexToRow: new Map(),
@@ -1457,6 +1705,7 @@
       drawMarkers(ctx);
       fitToBounds(map, bounds);
       setupControls(ctx);
+      setupStyle(ctx, root, toggleable);
       setupImages(ctx);
       setupGps(ctx);
       setupChart(ctx);
