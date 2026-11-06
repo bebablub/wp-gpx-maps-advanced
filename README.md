@@ -56,6 +56,22 @@ Display your NextGen Gallery images inside the map. Even if you don't have a GPS
 
 Extended by Stephan Klein ([klein-gedruckt.de](https://klein-gedruckt.de/2015/03/wordpress-plugin-wp-gpx-maps/)) to support displaying all images attached to a post without using NGG.
 
+### Map Photo Styling and Lightbox
+
+Clicking a photo on the map triggers the original image link, so a lightbox plugin (Fancybox, etc.) that handles image links on your site opens it; without one, the image opens in a new tab. The photo style is set with CSS variables, e.g. in your theme CSS:
+
+```css
+.wpgpxmaps {
+  --wpgpxmaps-img-size: 56px; /* default 44px */
+  --wpgpxmaps-img-hover-scale: 2.5; /* default 2.2 */
+  --wpgpxmaps-img-radius: 50%; /* default 6px */
+  --wpgpxmaps-img-border-width: 3px; /* default 2px */
+  --wpgpxmaps-img-border-color: #c0392b; /* default #fff (dark map: #3c4043) */
+  --wpgpxmaps-img-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  --wpgpxmaps-img-shadow-hover: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+```
+
 ### Translations (18 languages)
 
 | Language               | Locale    |
@@ -132,8 +148,8 @@ Thanks to: [www.securcube.net](http://www.securcube.net/), [www.devfarm.it](http
 | `mheight`            | Map height                                                                                                                                                                                                                                         | 450px         |
 | `gheight`            | Graph height (set to 0 to hide)                                                                                                                                                                                                                    | 200px         |
 | `mtype`              | Map type: HYBRID, ROADMAP, SATELLITE, TERRAIN, OSM1 (Open Street Map), OSM2 (Open Cycle Map), OSM4 (Open Cycle Map - Transport), OSM5 (Open Cycle Map - Landscape), OSM6 (MapTiler - Outdoor), OSM7 (MapTiler - Topo), OSM8 (MapTiler - Landscape) | HYBRID        |
-| `mapstyle`           | Map style: light, dark or auto (follows the visitor's light/dark preference). With a Google Maps Map ID the style is applied once on page load (vector Map ID required); without a Map ID it also switches live | light |
-| `mapstyletoggle`     | Show the light/dark switch button on the map (not shown with a Map ID) | true |
+| `mapstyle`           | Map style: light, dark or auto (follows the visitor's light/dark preference). With a Google Maps Map ID the style is applied once on page load (vector Map ID required); without a Map ID it also switches live                                    | light         |
+| `mapstyletoggle`     | Show the light/dark switch button on the map (not shown with a Map ID)                                                                                                                                                                             | true          |
 | `waypoints`          | Show GPX waypoints on the map                                                                                                                                                                                                                      | FALSE         |
 | `donotreducegpx`     | Print all points without reducing (on by default after installation, see Settings)                                                                                                                                                                 | FALSE         |
 | `pointsoffset`       | Skip points closer than XX meters                                                                                                                                                                                                                  | 10            |
@@ -237,6 +253,7 @@ Yes!
 - `[sgpxf]` renders maps with the same options as `[sgpx]`.
 - Map type OSM3 (Hike & Bike) was removed (service discontinued); saved or shortcode values fall back to the default.
 - The chart is no longer hidden on mobile screens.
+- Map photos: new look (CSS variables `--wpgpxmaps-img-*`), centred on their position, keyboard accessible; a click triggers the original image link so your lightbox plugin opens it.
 - Deactivating the plugin keeps settings; deleting it removes options and cache.
 - The `$_GET` fallback for shortcode attributes was removed.
 

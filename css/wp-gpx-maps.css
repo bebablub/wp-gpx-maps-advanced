@@ -1,11 +1,31 @@
 .wpgpxmaps { clear: both; }
 .wpgpxmaps > div,
 .wpgpxmaps > div > div { max-width: 100%; }
-#content .wpgpxmaps img,
-.entry-content .wpgpxmaps img,
-.wpgpxmaps img { max-width: none; width: auto; padding: 0; background: none; margin: 0; border: none; }
+#content .wpgpxmaps img:not(.myngimages),
+.entry-content .wpgpxmaps img:not(.myngimages),
+.wpgpxmaps img:not(.myngimages) { max-width: none; width: auto; padding: 0; background: none; margin: 0; border: none; }
 .wpgpxmaps .ngimages { display: none; }
-.wpgpxmaps .myngimages { border: 1px solid #fff; position: absolute; cursor: pointer; margin: 0; z-index: 1; }
+
+/* Map photos. Override the variables from the theme CSS, e.g. .wpgpxmaps { --wpgpxmaps-img-size: 56px; } */
+.wpgpxmaps img.myngimages {
+	position: absolute; z-index: 1; cursor: pointer; box-sizing: border-box; max-width: none; padding: 0; margin: 0; background: #fff; object-fit: cover;
+	width: var(--wpgpxmaps-img-size, 44px); height: var(--wpgpxmaps-img-size, 44px);
+	border: var(--wpgpxmaps-img-border-width, 2px) solid var(--wpgpxmaps-img-border-color, #fff);
+	border-radius: var(--wpgpxmaps-img-radius, 6px);
+	box-shadow: var(--wpgpxmaps-img-shadow, 0 1px 4px rgba(0, 0, 0, 0.35));
+	transform: translate(-50%, -50%);
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.wpgpxmaps img.myngimages:hover,
+.wpgpxmaps img.myngimages:focus-visible {
+	z-index: 10;
+	transform: translate(-50%, -50%) scale(var(--wpgpxmaps-img-hover-scale, 2.2));
+	box-shadow: var(--wpgpxmaps-img-shadow-hover, 0 4px 14px rgba(0, 0, 0, 0.5));
+}
+.wpgpxmaps img.myngimages:focus-visible { outline: 2px solid #1a73e8; outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) {
+	.wpgpxmaps img.myngimages { transition: none; }
+}
 .wpgpxmaps .report { line-height: 120%; }
 
 .wpgpxmaps_summary { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 16px; align-items: start; border-top: 1px solid rgba(128, 128, 128, 0.35); margin-top: 8px; padding-top: 8px; }
@@ -81,6 +101,7 @@
 	color: #e8eaed;
 }
 .wpgpxmaps_summary.wpgpxmaps-dark { padding: 8px; }
+.wpgpxmaps-dark img.myngimages { border-color: var(--wpgpxmaps-img-border-color, #3c4043); background: #3c4043; }
 .wpgpxmaps-dark .wpgpxmaps_error { border-color: #8c2f31; background: #3b1f20; color: #f2b8b5; }
 .wpgpxmaps-dark .wpgpxmaps_osm_footer,
 .wpgpxmaps-dark .wpgpxmaps_osm_footer span { background: #2b2d31; color: #bdc1c6; }

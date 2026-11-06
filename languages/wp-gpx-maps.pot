@@ -44,6 +44,9 @@ msgstr ""
 msgid "Show Images"
 msgstr ""
 
+msgid "Open image"
+msgstr ""
+
 msgid "Back to center"
 msgstr ""
 

@@ -7,8 +7,6 @@
 
   const SETTINGS = window.WPGPXMAPS_SETTINGS || {};
   const I18N = SETTINGS.i18n || {};
-  const IMAGE_SIZE = 38;
-  const IMAGE_SIZE_HOVER = 94;
   const IMAGE_CONCURRENCY = 3;
 
   let googlePromise = null;
@@ -645,11 +643,12 @@
 
   function createImageOverlayClass() {
     return class WpgpxImageOverlay extends google.maps.OverlayView {
-      constructor(map, position, src, href) {
+      constructor(map, position, src, anchor, label) {
         super();
         this._latlng = new google.maps.LatLng(position.lat, position.lng);
         this._src = src;
-        this._href = href;
+        this._anchor = anchor;
+        this._label = label;
         this._div = null;
         this.setMap(map);
       }
@@ -659,22 +658,18 @@
         img.className = "myngimages";
         img.src = this._src;
         img.alt = "";
-        img.style.width = `${IMAGE_SIZE}px`;
-        img.style.height = `${IMAGE_SIZE}px`;
-        img.style.objectFit = "cover";
-        img.addEventListener("mouseenter", () => {
-          img.style.width = `${IMAGE_SIZE_HOVER}px`;
-          img.style.height = `${IMAGE_SIZE_HOVER}px`;
-          img.style.zIndex = "10";
-        });
-        img.addEventListener("mouseleave", () => {
-          img.style.width = `${IMAGE_SIZE}px`;
-          img.style.height = `${IMAGE_SIZE}px`;
-          img.style.zIndex = "";
-        });
-        if (this._href) {
-          img.addEventListener("click", () => {
-            window.open(this._href, "_blank", "noopener");
+        if (this._anchor) {
+          img.setAttribute("role", "button");
+          img.tabIndex = 0;
+          img.title = this._label;
+          img.setAttribute("aria-label", this._label);
+          const open = () => openImageLink(this._anchor);
+          img.addEventListener("click", open);
+          img.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              open();
+            }
           });
         }
         this._div = img;
@@ -702,6 +697,27 @@
         }
       }
     };
+  }
+
+  /** Lets the site's lightbox plugin handle the original link; opens a new tab if none does. */
+  function openImageLink(anchor) {
+    let handled = false;
+    const probe = (event) => {
+      handled = event.defaultPrevented;
+      event.preventDefault();
+    };
+    window.addEventListener("click", probe);
+    anchor.dispatchEvent(
+      new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+      }),
+    );
+    window.removeEventListener("click", probe);
+    if (!handled && /^https?:/i.test(anchor.href)) {
+      window.open(anchor.href, "_blank", "noopener");
+    }
   }
 
   /** Picks the smallest usable source of a (possibly lazy-loaded) thumbnail. */
@@ -747,7 +763,8 @@
       items.push({
         position: { lat, lng },
         src,
-        href: anchor && /^https?:/i.test(anchor.href) ? anchor.href : "",
+        anchor: anchor && /^https?:/i.test(anchor.href) ? anchor : null,
+        label: img.getAttribute("alt") || I18N.openImage || "Open image",
       });
     });
     if (!items.length) {
@@ -771,7 +788,8 @@
           ctx.map,
           item.position,
           item.src,
-          item.href,
+          item.anchor,
+          item.label,
         );
         overlays.push(overlay);
         if (!visible) {

@@ -101,6 +101,7 @@ function wpgpxmaps_frontend_settings(): array
 			'cadence' => __('Cadence', 'wp-gpx-maps'),
 			'hideImages' => __('Hide Images', 'wp-gpx-maps'),
 			'showImages' => __('Show Images', 'wp-gpx-maps'),
+			'openImage' => __('Open image', 'wp-gpx-maps'),
 			'backToCenter' => __('Back to center', 'wp-gpx-maps'),
 			'switchToDark' => __('Switch to dark map', 'wp-gpx-maps'),
 			'switchToLight' => __('Switch to light map', 'wp-gpx-maps'),
